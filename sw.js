@@ -1,9 +1,11 @@
 /**
  * StrokeTracker Service Worker (sw.js)
- * Provides offline-first reliability for remote golf courses with zero signal.
+ * Network-First with Offline Cache Fallback:
+ * - Always fetches latest code when online (no Ctrl+F5 needed after deploys)
+ * - Seamlessly serves cached app shell when offline with zero mobile reception
  */
 
-const CACHE_NAME = 'stroketracker-cache-v3';
+const CACHE_NAME = 'stroketracker-cache-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -43,24 +45,20 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const networkFetch = fetch(event.request)
-        .then((networkResponse) => {
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            networkResponse.type === 'basic'
-          ) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || networkFetch;
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type === 'basic'
+        ) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
