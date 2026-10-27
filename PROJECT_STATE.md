@@ -1,37 +1,37 @@
 # StrokeTracker — Project State & Memory Bank
 
-> **Status:** Version 1.0 Complete (Deployed to GitHub Pages)
-> **Live App URL:** https://bjorkis10.github.io/StrokeTracker/
-> **GitHub Repository:** https://github.com/Bjorkis10/StrokeTracker
+> **Status:** Version 1.1 Complete (Deployed to Dev Preview; Ready for Production)
+> **Production App URL (`origin`):** https://bjorkis10.github.io/StrokeTracker/
+> **Dev Preview App URL (`dev`):** https://bjorkis10.github.io/StrokeTracker-dev/
+> **GitHub Repositories:** [Production](https://github.com/Bjorkis10/StrokeTracker) | [Dev Preview](https://github.com/Bjorkis10/StrokeTracker-dev)
 > **Last Updated:** 2026-10-27
 
 ---
 
-## 1. Current Features Implemented (v1.0)
-- [x] **Universal PWA & Cross-Browser Installation**:
-  - Valid `manifest.json` configured with `display: standalone`, `theme_color: #000000`, `background_color: #000000`, and embedded SVG maskable icons.
-  - Apple iOS Home Screen meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`, `apple-touch-icon`).
-  - Dynamic viewport units (`100dvh`) with `env(safe-area-inset-*)` padding so notches, Dynamic Islands, and mobile browser toolbars never clip controls.
-- [x] **Screen Wake Lock API (with Safe Fallbacks)**:
-  - Feature-detects `navigator.wakeLock` and requests a `'screen'` lock automatically on launch and first interaction.
-  - Automatically re-acquires the wake lock on `visibilitychange` when returning to the app.
-  - Interactive header status badge (`Screen Always On: Active` / `Inactive` / `Unsupported`) allowing manual toggle when supported.
-- [x] **Responsive OLED UI (Mobile Full-Bleed + Desktop Centered)**:
-  - Pure black (`#000000`) background for maximum OLED battery savings and outdoor sunlight legibility.
-  - Full-screen native layout on mobile viewports; sleek phone-sized card container (`max-width: 420px`) centered on desktop/tablet monitors.
-  - Oversized, glove-friendly `+1 STROKE` primary button with live hole stroke count and golf score term badge (`Birdie`, `Even Par`, `Bogey`, etc.).
-  - Dedicated `-1 / Undo Stroke` button isolated in the bottom bar to prevent accidental taps.
-  - Large Hole Number (`1–18`) indicator with `Prev`/`Next` buttons, an expandable 18-hole Quick-Jump grid drawer, and editable Par selector pills (`Par 3`, `Par 4`, `Par 5`, defaulting to `Par 4`).
-  - Live cumulative round score header displaying total strokes and relative-to-par score across played holes (e.g., `Score: 42 (+2)`).
-- [x] **Desktop Keyboard Controls**:
-  - `Space` or `+` (`=`): Add stroke (`+1`)
-  - `-` or `Backspace`: Undo stroke (`-1`)
-  - `ArrowRight` / `ArrowLeft`: Next / Previous hole
-  - `Escape`: Dismiss confirmation modal or quick-jump drawer
-- [x] **Haptic & Visual Feedback + LocalStorage Persistence**:
-  - Guarded haptic vibration (`if (navigator.vibrate) navigator.vibrate(50)`) paired with an instant CSS micro-scaling animation (`tap-pulse`) for non-vibrating devices (iOS Safari, Desktop).
-  - Automatic `localStorage` persistence (`stroketracker_state_v1`) saving all 18 holes, custom pars, stroke counts, and active hole on every action.
-  - Guarded `New Round` confirmation modal with an optional checkbox to also reset custom hole pars back to default Par 4.
+## 1. Current Features Implemented (v1.1)
+- [x] **Course Selection & Custom Course Builder (`v1.1`)**:
+  - Header Course Selector dropdown (`#courseSelect`) and New Round Course Selector (`#newRoundCourseSelect`).
+  - Built-in 18-hole presets:
+    - `Generic Par 72` (Out 36 / In 36)
+    - `Course A — Championship Links (Par 72)` (Out 36 / In 36)
+    - `Course B — Parkland Pines (Par 71)` (Out 35 / In 36)
+    - `Course C — Executive Valley (Par 69)` (Out 34 / In 35)
+  - Interactive **Add / Edit Custom Course Modal** (`#courseModal`) allowing players to name a course, tap any of the 18 holes to cycle Par 3 / 4 / 5 with live Out/In/Total par calculation, and save/edit/delete custom courses in `localStorage` (`stroketracker_courses_v1`).
+- [x] **18-Hole Scorecard Modal (`v1.1`)**:
+  - Dedicated `View Scorecard` button in the bottom bar (plus desktop shortcut `S`).
+  - Displays summary cards for **Front 9 (OUT)**, **Back 9 (IN)**, and **Total (18)** showing strokes, relative-to-par (`+`, `-`, `E`), and section par.
+  - Full 18-hole table showing **Hole**, **Par**, **Strokes**, and color-coded **Score vs. Par** pills, including `OUT (1–9)`, `IN (10–18)`, and `TOTAL` subtotal rows. Tapping any hole row jumps directly to that hole.
+- [x] **Golf GameBook Summary Export (`v1.1`)**:
+  - `Copy Summary` button inside the Scorecard Modal that formats the round into a structured plain-text summary (Course name, Date, Total/Out/In scores, compact Front 9 & Back 9 strips, and hole-by-hole list) ready to reference when entering scores into **Golf GameBook**.
+- [x] **Offline-First Service Worker (`v1.1`)**:
+  - `sw.js` caches core application shell assets (`./`, `index.html`, `style.css`, `app.js`, `manifest.json`) using a cache-first + background network update strategy so the app loads reliably with zero mobile reception.
+- [x] **Universal PWA & Cross-Browser Installation (`v1.0`)**:
+  - Valid `manifest.json` (`display: standalone`, `theme_color: #000000`, `background_color: #000000`) and iOS Home Screen meta tags (`apple-mobile-web-app-capable`, `black-translucent`).
+  - Dynamic viewport units (`100dvh`) with `env(safe-area-inset-*)` notch/toolbar safety.
+- [x] **Screen Wake Lock API (`v1.0`)**:
+  - Automatic `'screen'` wake lock request with `visibilitychange` re-acquisition and interactive header badge (`Active`, `Inactive`, `Unsupported`).
+- [x] **Responsive OLED UI, Keyboard Controls & Haptic/Visual Feedback (`v1.0`)**:
+  - Pure `#000000` OLED theme, oversized `+1 STROKE` tap target, separated `Undo` button, `Space`/`+`, `-`/`Backspace`, `ArrowLeft`/`ArrowRight`, `S` (Scorecard) shortcuts, and `navigator.vibrate(50)` + `.tap-pulse` CSS animation.
 
 ---
 
@@ -39,61 +39,41 @@
 - **Core Stack:** Pure Vanilla HTML5, CSS3, and ES6+ JavaScript.
 - **Zero Build Dependencies:** No external frameworks, bundlers, or npm packages required.
 - **Modular Files:**
-  - `index.html` — Semantic application layout, PWA meta tags, quick-jump drawer, and accessible confirmation dialog.
-  - `style.css` — OLED black theme variables, `100dvh` + safe-area inset layout, desktop card frame, and tactile micro-scale animations.
-  - `app.js` — State engine, `localStorage` sync, Screen Wake Lock manager, cumulative par calculator, haptic/CSS feedback, and keyboard shortcuts.
+  - `index.html` — Semantic application layout, Course Selector header bar, Scorecard Modal, Custom Course Editor Modal, and New Round confirmation dialog.
+  - `style.css` — OLED black theme variables, `100dvh` + safe-area inset layout, desktop card frame, scorecard table & summary cards, and tactile micro-scale animations.
+  - `app.js` — State engine, `localStorage` sync (`stroketracker_state_v1` & `stroketracker_courses_v1`), Screen Wake Lock manager, scorecard calculator, Golf GameBook text exporter, and Service Worker registration.
+  - `sw.js` — Offline-first Service Worker for zero-signal reliability on remote courses.
   - `manifest.json` — Standalone Web App Manifest with embedded vector icons.
 
 ---
 
 ## 3. Cross-Platform Browser Support Matrix
 
-| Platform / Browser | Standalone PWA | Wake Lock API | Haptic Vibration | Dynamic Viewport (`100dvh`) | Notes |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **iOS Safari (iPhone/iPad)** | Yes (Add to Home Screen) | Yes (iOS 16.4+) | No (CSS visual pulse fallback) | Yes | Full notch & home-indicator safe-area support |
-| **Android Chrome** | Yes (Install App) | Yes | Yes (`navigator.vibrate(50)`) | Yes | Full native-like standalone experience |
-| **Desktop Chrome / Edge** | Yes (Installable PWA) | Yes | No (CSS visual pulse fallback) | Yes | Centered phone card UI + keyboard shortcuts |
-| **Desktop Firefox** | Partial (Browser tab) | Yes (v126+) | No (CSS visual pulse fallback) | Yes | Centered phone card UI + keyboard shortcuts |
-| **Desktop Safari (macOS)** | Yes (Add to Dock) | Yes | No (CSS visual pulse fallback) | Yes | Centered phone card UI + keyboard shortcuts |
+| Platform / Browser | Standalone PWA | Offline (`sw.js`) | Wake Lock API | Haptic Vibration | Dynamic Viewport (`100dvh`) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **iOS Safari (iPhone/iPad)** | Yes (Add to Home Screen) | Yes | Yes (iOS 16.4+) | No (CSS visual pulse fallback) | Yes |
+| **Android Chrome** | Yes (Install App) | Yes | Yes | Yes (`navigator.vibrate(50)`) | Yes |
+| **Desktop Chrome / Edge** | Yes (Installable PWA) | Yes | Yes | No (CSS visual pulse fallback) | Yes |
+| **Desktop Firefox** | Partial (Browser tab) | Yes | Yes (v126+) | No (CSS visual pulse fallback) | Yes |
+| **Desktop Safari (macOS)** | Yes (Add to Dock) | Yes | Yes | No (CSS visual pulse fallback) | Yes |
 
 ---
 
 ## 4. Roadmap / Future Ideas
-- **v1.1 — Shot & Stat Breakdown:** Track putts per hole, Fairways in Regulation (FIR), Greens in Regulation (GIR), and penalty strokes.
-- **v1.2 — Course & GPS Integration:** Geolocation API (`navigator.geolocation`) for distance to front/middle/back of green and saved course par templates.
-- **v1.3 — Scorecard History & Export:** Multi-round history archive with full 18-hole scorecard table (Front 9 / Back 9 / Total) and CSV/JSON export.
-- **v1.4 — Offline Service Worker:** Cache-first `sw.js` for 100% offline loading in remote courses with zero cellular reception.
+- **v1.2 — Shot & Stat Breakdown:** Track putts per hole, Fairways in Regulation (FIR), Greens in Regulation (GIR), and penalty strokes.
+- **v1.3 — Course GPS Distance:** Geolocation API (`navigator.geolocation`) for distance to front/middle/back of green.
+- **v1.4 — Multi-Round History Archive:** Save completed rounds into a searchable round history log with CSV/JSON export.
 
 ---
 
-## 5. How to Run & Preview (PC & Mobile)
+## 5. How to Run & Preview (GitHub Pages, PC & Mobile)
 
-### Option A: Preview on PC (Desktop Browser)
-1. **Direct File Open (Quickest):**
-   Double-click `index.html` or open it directly in Chrome, Edge, Firefox, or Safari.
-   *(Note: Some browsers restrict PWA installation and `navigator.wakeLock` on `file://` URLs; use a local HTTP server below to test all APIs).*
-2. **Local HTTP Server (Recommended for Full PWA & Wake Lock Testing):**
-   Run one of the following commands inside the project folder (`StrokeTracker`):
-   ```powershell
-   # Using Python 3
-   python -m http.server 8080
+### Option A: Live GitHub Pages (Recommended for Mobile & Course Use)
+- Open **`https://bjorkis10.github.io/StrokeTracker/`** on iPhone Safari, Android Chrome, or Desktop.
+- After loading once, `sw.js` caches the app so it opens even with zero mobile reception.
 
-   # Or using Node.js
-   npx --yes serve -l 8080 .
-   ```
-   Then open **`http://localhost:8080`** in your desktop browser. Try the keyboard shortcuts (`Space`/`+`, `-`/`Backspace`, `ArrowLeft`/`ArrowRight`).
-
-### Option B: Preview on Mobile Devices (iPhone Safari & Android Chrome)
-1. **Connect to the Same Wi-Fi Network:** Ensure your phone and PC are on the same local Wi-Fi network.
-2. **Find Your PC's Local LAN IP Address:**
-   - On Windows PowerShell: run `ipconfig` and look for **IPv4 Address** (e.g., `192.168.1.50`).
-   - On macOS/Linux: run `ifconfig` or `ip addr`.
-3. **Start the Local Server Bound to All Interfaces:**
-   ```powershell
-   python -m http.server 8080 --bind 0.0.0.0
-   ```
-4. **Open on Your Phone:**
-   - Navigate to `http://<YOUR_PC_IP>:8080` in **iPhone Safari** or **Android Chrome**.
-   - **Install to Home Screen (iOS):** Tap the **Share** button in Safari $\rightarrow$ **Add to Home Screen** $\rightarrow$ Launch **StrokeTracker** as a full-screen standalone app.
-   - **Install to Home Screen (Android):** Tap the browser menu ($\vdots$) $\rightarrow$ **Add to Home screen / Install app**.
-   - *(Tip: `navigator.wakeLock` requires either `localhost` or `https://`. When testing from a phone over LAN HTTP, the header badge will gracefully fall back to `Inactive`/`Unsupported`; deploying to GitHub Pages, Cloudflare Pages, Vercel, or Netlify provides automatic `https://` so Wake Lock activates on mobile automatically).*
+### Option B: Local HTTP Server (For Local Development)
+```powershell
+python -m http.server 8080 --bind 0.0.0.0
+```
+Open **`http://localhost:8080`** on PC or `http://<YOUR_PC_IP>:8080` on mobile over LAN.

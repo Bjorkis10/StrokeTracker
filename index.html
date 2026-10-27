@@ -23,24 +23,44 @@
 </head>
 <body>
   <main class="app-shell" id="appShell" aria-label="Golf Stroke Tracker">
-    <!-- Top Header: Cumulative Score & Screen Wake Lock Badge -->
-    <header class="top-bar">
-      <div class="total-score-block" aria-live="polite">
-        <span class="top-label">ROUND SCORE</span>
-        <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
+    <!-- Top Header: Cumulative Score, Wake Lock Status & Course Selector -->
+    <header class="top-header-group">
+      <div class="top-bar">
+        <div class="total-score-block" aria-live="polite">
+          <span class="top-label">ROUND SCORE</span>
+          <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
+        </div>
+
+        <button
+          type="button"
+          id="wakeLockBtn"
+          class="wakelock-badge"
+          data-state="inactive"
+          aria-label="Toggle Screen Always On"
+          title="Toggle Screen Wake Lock"
+        >
+          <span class="wakelock-dot" aria-hidden="true"></span>
+          <span class="wakelock-text" id="wakeLockText">Screen Always On: Inactive</span>
+        </button>
       </div>
 
-      <button
-        type="button"
-        id="wakeLockBtn"
-        class="wakelock-badge"
-        data-state="inactive"
-        aria-label="Toggle Screen Always On"
-        title="Toggle Screen Wake Lock"
-      >
-        <span class="wakelock-dot" aria-hidden="true"></span>
-        <span class="wakelock-text" id="wakeLockText">Screen Always On: Inactive</span>
-      </button>
+      <!-- Course Selector Bar -->
+      <div class="course-bar">
+        <label for="courseSelect" class="sr-only">Select Golf Course</label>
+        <div class="course-select-wrapper">
+          <span class="course-icon" aria-hidden="true">&#9971;</span>
+          <select id="courseSelect" class="course-select" aria-label="Select Golf Course"></select>
+        </div>
+        <button
+          type="button"
+          id="manageCourseBtn"
+          class="course-manage-btn"
+          aria-label="Add or edit custom course"
+          title="Add or edit custom course"
+        >
+          + Custom
+        </button>
+      </div>
     </header>
 
     <!-- Hole Navigation & Editable Par Controls -->
@@ -119,7 +139,7 @@
       </button>
     </section>
 
-    <!-- Separated Bottom Controls: Undo (-1) & Reset / New Round -->
+    <!-- Separated Bottom Controls: Undo (-1), View Scorecard & New Round -->
     <footer class="bottom-controls">
       <button
         type="button"
@@ -128,7 +148,17 @@
         aria-label="Undo last stroke (-1)"
       >
         <span class="btn-symbol" aria-hidden="true">&minus;1</span>
-        <span>Undo Stroke</span>
+        <span>Undo</span>
+      </button>
+
+      <button
+        type="button"
+        id="viewScorecardBtn"
+        class="secondary-btn scorecard-btn"
+        aria-label="View 18-hole Scorecard"
+      >
+        <span class="btn-symbol" aria-hidden="true">&#9776;</span>
+        <span>View Scorecard</span>
       </button>
 
       <button
@@ -144,12 +174,167 @@
 
     <!-- Desktop Keyboard Shortcuts Hint -->
     <aside class="keyboard-hints" aria-hidden="true">
-      <span><kbd>Space</kbd> / <kbd>+</kbd> +1 Stroke</span>
-      <span><kbd>-</kbd> / <kbd>Backspace</kbd> Undo</span>
-      <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Hole</span>
+      <span><kbd>Space</kbd>/<kbd>+</kbd> +1</span>
+      <span><kbd>-</kbd>/<kbd>Bksp</kbd> Undo</span>
+      <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> Hole</span>
+      <span><kbd>S</kbd> Scorecard</span>
     </aside>
 
-    <!-- Accessible Confirmation Modal for Reset / New Round -->
+    <!-- ======================================================================
+         Modal 1: 18-Hole Scorecard & Golf GameBook Summary Export
+         ====================================================================== -->
+    <div
+      id="scorecardModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scorecardModalTitle"
+      hidden
+    >
+      <div class="modal-card modal-card-large">
+        <div class="modal-header-row">
+          <div>
+            <h2 id="scorecardModalTitle" class="modal-title">Round Scorecard</h2>
+            <p id="scorecardCourseSubtitle" class="modal-subtitle">Generic Par 72</p>
+          </div>
+          <button
+            type="button"
+            id="closeScorecardIconBtn"
+            class="icon-close-btn"
+            aria-label="Close Scorecard"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Front 9 / Back 9 / Total Summary Strip -->
+        <div class="scorecard-summary-strip">
+          <div class="summary-box">
+            <span class="summary-label">FRONT 9 (OUT)</span>
+            <span class="summary-val" id="summaryFront9">0 (E)</span>
+            <span class="summary-sub" id="summaryFront9Par">Par 36</span>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">BACK 9 (IN)</span>
+            <span class="summary-val" id="summaryBack9">0 (E)</span>
+            <span class="summary-sub" id="summaryBack9Par">Par 36</span>
+          </div>
+          <div class="summary-box highlight">
+            <span class="summary-label">TOTAL</span>
+            <span class="summary-val" id="summaryTotal">0 (E)</span>
+            <span class="summary-sub" id="summaryTotalPar">Par 72</span>
+          </div>
+        </div>
+
+        <!-- Scrollable 18-Hole Grid Table -->
+        <div class="scorecard-table-wrap">
+          <table class="scorecard-table" aria-label="18-Hole Scorecard Breakdown">
+            <thead>
+              <tr>
+                <th scope="col">Hole</th>
+                <th scope="col">Par</th>
+                <th scope="col">Strokes</th>
+                <th scope="col">+ / &minus;</th>
+              </tr>
+            </thead>
+            <tbody id="scorecardTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="modal-actions scorecard-actions">
+          <button
+            type="button"
+            id="copySummaryBtn"
+            class="modal-btn primary-green"
+          >
+            Copy Summary
+          </button>
+          <button
+            type="button"
+            id="closeScorecardBtn"
+            class="modal-btn cancel"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         Modal 2: Add / Edit Custom Course Modal
+         ====================================================================== -->
+    <div
+      id="courseModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="courseModalTitle"
+      hidden
+    >
+      <div class="modal-card modal-card-large">
+        <div class="modal-header-row">
+          <div>
+            <h2 id="courseModalTitle" class="modal-title">Custom Course Setup</h2>
+            <p class="modal-subtitle">Tap any hole below to cycle Par 3 / 4 / 5</p>
+          </div>
+          <button
+            type="button"
+            id="closeCourseModalIconBtn"
+            class="icon-close-btn"
+            aria-label="Close Custom Course Editor"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="customCourseNameInput" class="form-label">COURSE NAME</label>
+          <input
+            type="text"
+            id="customCourseNameInput"
+            class="form-input"
+            placeholder="e.g. Pinehurst No. 2"
+            maxlength="42"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="course-editor-summary" id="courseEditorParSummary">
+          Out: 36 &bull; In: 36 &bull; Total Par: 72
+        </div>
+
+        <div class="course-par-grid" id="courseParGrid"></div>
+
+        <div class="modal-actions course-modal-actions">
+          <button
+            type="button"
+            id="deleteCustomCourseBtn"
+            class="modal-btn danger-outline"
+            hidden
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            id="cancelCourseModalBtn"
+            class="modal-btn cancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="saveCourseModalBtn"
+            class="modal-btn primary-green"
+          >
+            Save Course
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         Modal 3: Accessible Confirmation Modal for Reset / New Round
+         ====================================================================== -->
     <div
       id="confirmModal"
       class="modal-backdrop"
@@ -162,12 +347,12 @@
       <div class="modal-card">
         <h2 id="modalTitle" class="modal-title">Start New Round?</h2>
         <p id="modalDesc" class="modal-desc">
-          This will reset all 18 holes back to 0 strokes. Do you want to continue?
+          This will reset all 18 holes back to 0 strokes for the selected course.
         </p>
-        <label class="modal-checkbox-row">
-          <input type="checkbox" id="resetParsCheckbox" />
-          <span>Also reset all holes to default Par 4</span>
-        </label>
+        <div class="form-group">
+          <label for="newRoundCourseSelect" class="form-label">COURSE FOR NEW ROUND</label>
+          <select id="newRoundCourseSelect" class="course-select modal-select"></select>
+        </div>
         <div class="modal-actions">
           <button type="button" id="cancelResetBtn" class="modal-btn cancel">
             Cancel

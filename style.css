@@ -41,6 +41,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html,
 body {
   width: 100%;
@@ -61,16 +73,24 @@ body {
   justify-content: center;
 }
 
-button {
+button,
+select,
+input {
   font: inherit;
   color: inherit;
   background: none;
   border: none;
-  cursor: pointer;
   touch-action: manipulation;
 }
 
-button:focus-visible {
+button,
+select {
+  cursor: pointer;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--accent-green-bright);
   outline-offset: 2px;
 }
@@ -88,63 +108,69 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 10px;
-  padding-top: calc(var(--safe-top) + 12px);
-  padding-bottom: calc(var(--safe-bottom) + 14px);
-  padding-left: calc(var(--safe-left) + 14px);
-  padding-right: calc(var(--safe-right) + 14px);
+  gap: 8px;
+  padding-top: calc(var(--safe-top) + 10px);
+  padding-bottom: calc(var(--safe-bottom) + 12px);
+  padding-left: calc(var(--safe-left) + 12px);
+  padding-right: calc(var(--safe-right) + 12px);
 }
 
 @media (min-width: 540px) {
   body {
     align-items: center;
-    padding: 20px;
+    padding: 18px;
     background: radial-gradient(circle at 50% 20%, #0d1912 0%, #000000 70%);
   }
 
   .app-shell {
-    max-width: 420px;
-    height: min(860px, calc(100dvh - 40px));
+    max-width: 430px;
+    height: min(880px, calc(100dvh - 36px));
     border-radius: 34px;
     border: 1.5px solid #22222a;
     box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.9),
       0 0 0 6px #070709;
-    padding: 20px 18px 18px;
+    padding: 18px 16px 16px;
   }
 }
 
 /* ==========================================================================
-   Header: Total Cumulative Score & Screen Wake Lock Status Badge
+   Header: Total Cumulative Score, Wake Lock Badge & Course Selector Bar
    ========================================================================== */
+
+.top-header-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   background-color: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
-  flex-shrink: 0;
 }
 
 .total-score-block {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .top-label {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
 }
 
 .total-score-value {
-  font-size: 1.25rem;
+  font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -155,16 +181,16 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 11px;
+  padding: 7px 10px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
   color: var(--text-secondary);
   transition: transform 0.12s ease, border-color 0.2s ease, background-color 0.2s ease;
-  max-width: 54%;
+  max-width: 55%;
 }
 
 .wakelock-badge:active {
@@ -212,6 +238,65 @@ button:focus-visible {
   background-color: var(--text-muted);
 }
 
+/* Course Selector Bar */
+.course-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.course-select-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding-left: 10px;
+  height: 38px;
+}
+
+.course-icon {
+  font-size: 0.9rem;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.course-select {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding-right: 10px;
+  text-overflow: ellipsis;
+}
+
+.course-select option {
+  background-color: #101014;
+  color: var(--text-primary);
+}
+
+.course-manage-btn {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent-green-bright);
+  white-space: nowrap;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.course-manage-btn:active {
+  transform: scale(0.95);
+  background-color: #1f1f26;
+}
+
 /* ==========================================================================
    Hole Navigation & Editable Par Selector
    ========================================================================== */
@@ -224,13 +309,13 @@ button:focus-visible {
   background-color: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 9px 12px;
   flex-shrink: 0;
 }
 
 .hole-nav-row {
   display: grid;
-  grid-template-columns: 88px 1fr 88px;
+  grid-template-columns: 84px 1fr 84px;
   align-items: center;
   gap: 8px;
 }
@@ -239,12 +324,12 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 48px;
+  gap: 5px;
+  height: 44px;
   border-radius: var(--radius-sm);
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary);
   transition: transform 0.1s ease, background-color 0.15s ease;
@@ -260,7 +345,7 @@ button:focus-visible {
   align-items: baseline;
   justify-content: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
   background-color: transparent;
   transition: background-color 0.15s ease, transform 0.1s ease;
@@ -272,14 +357,14 @@ button:focus-visible {
 }
 
 .hole-prefix {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   color: var(--text-secondary);
 }
 
 .hole-number {
-  font-size: 2.15rem;
+  font-size: 2.05rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-primary);
@@ -287,7 +372,7 @@ button:focus-visible {
 }
 
 .hole-caret {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--accent-green-bright);
 }
 
@@ -301,7 +386,7 @@ button:focus-visible {
 }
 
 .par-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
@@ -315,11 +400,11 @@ button:focus-visible {
 }
 
 .par-pill {
-  min-width: 68px;
-  height: 36px;
-  padding: 0 12px;
+  min-width: 66px;
+  height: 34px;
+  padding: 0 11px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
@@ -339,8 +424,8 @@ button:focus-visible {
 
 /* Quick-Jump 1–18 Hole Grid Drawer */
 .hole-jump-drawer {
-  margin-top: 6px;
-  padding-top: 10px;
+  margin-top: 4px;
+  padding-top: 8px;
   border-top: 1px solid var(--surface-border);
 }
 
@@ -348,10 +433,10 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .drawer-legend {
@@ -362,7 +447,7 @@ button:focus-visible {
 .hole-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
 
 .hole-cell {
@@ -370,7 +455,7 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 2px;
+  padding: 5px 2px;
   border-radius: 8px;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
@@ -392,13 +477,13 @@ button:focus-visible {
 }
 
 .hole-cell-num {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .hole-cell-score {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -414,7 +499,7 @@ button:focus-visible {
 .primary-action-zone {
   flex: 1;
   display: flex;
-  min-height: 220px;
+  min-height: 200px;
 }
 
 .add-stroke-btn {
@@ -428,8 +513,8 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: 20px;
+  gap: 16px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
   transition:
@@ -457,7 +542,7 @@ button:focus-visible {
 }
 
 .stroke-count {
-  font-size: clamp(4.8rem, 19vw, 6.8rem);
+  font-size: clamp(4.4rem, 18vw, 6.4rem);
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -474,7 +559,7 @@ button:focus-visible {
   display: inline-block;
   padding: 5px 14px;
   border-radius: 999px;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -502,7 +587,7 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 26px;
+  padding: 11px 24px;
   border-radius: 999px;
   background-color: var(--accent-green);
   color: #000000;
@@ -512,22 +597,22 @@ button:focus-visible {
 }
 
 .plus-icon {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
 }
 
 .cta-label {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
 }
 
 /* ==========================================================================
-   Separated Bottom Bar: Dedicated Undo (-1) & Reset / New Round
+   Separated Bottom Bar: Dedicated Undo (-1), View Scorecard & New Round
    ========================================================================== */
 
 .bottom-controls {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 4px;
+  grid-template-columns: 1fr 1.35fr 1fr;
+  gap: 8px;
+  margin-top: 2px;
   flex-shrink: 0;
 }
 
@@ -535,14 +620,16 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 54px;
+  gap: 6px;
+  height: 50px;
+  padding: 0 8px;
   border-radius: var(--radius-md);
   background-color: var(--surface-card);
   border: 1.5px solid var(--surface-border);
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   font-weight: 800;
   color: var(--text-primary);
+  white-space: nowrap;
   transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
 }
 
@@ -562,13 +649,19 @@ button:focus-visible {
   border-color: #3f3f46;
 }
 
+.scorecard-btn {
+  border-color: rgba(34, 197, 94, 0.45);
+  color: var(--accent-green-bright);
+  background-color: rgba(34, 197, 94, 0.08);
+}
+
 .reset-btn {
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.35);
 }
 
 .btn-symbol {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 900;
 }
 
@@ -579,10 +672,10 @@ button:focus-visible {
 .keyboard-hints {
   display: none;
   justify-content: center;
-  gap: 14px;
-  font-size: 0.72rem;
+  gap: 12px;
+  font-size: 0.68rem;
   color: var(--text-muted);
-  padding-top: 2px;
+  padding-top: 1px;
   flex-shrink: 0;
 }
 
@@ -590,7 +683,7 @@ button:focus-visible {
   display: inline-block;
   padding: 1px 5px;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   color: var(--text-secondary);
   background-color: var(--surface-elevated);
@@ -605,19 +698,19 @@ button:focus-visible {
 }
 
 /* ==========================================================================
-   Confirmation Modal (New Round / Reset)
+   Modals (Scorecard, Custom Course Editor, New Round Confirmation)
    ========================================================================== */
 
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.84);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  z-index: 50;
+  padding: 14px;
+  z-index: 60;
 }
 
 .modal-backdrop[hidden] {
@@ -626,57 +719,323 @@ button:focus-visible {
 
 .modal-card {
   width: 100%;
-  max-width: 340px;
-  background-color: #101014;
+  max-width: 360px;
+  background-color: #0e0e12;
   border: 1.5px solid var(--surface-border);
   border-radius: var(--radius-lg);
-  padding: 22px 20px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+  gap: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95);
+}
+
+.modal-card-large {
+  max-width: 400px;
+  max-height: 92%;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .modal-title {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
+.modal-subtitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.icon-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .modal-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   line-height: 1.45;
   color: var(--text-secondary);
 }
 
-.modal-checkbox-row {
+.form-group {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.form-input,
+.modal-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
   color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* Scorecard Summary Strip (Front 9 / Back 9 / Total) */
+.scorecard-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.summary-box {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-box.highlight {
+  border-color: rgba(34, 197, 94, 0.5);
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.summary-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.summary-val {
+  font-size: 0.98rem;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.summary-box.highlight .summary-val {
+  color: var(--accent-green-bright);
+}
+
+.summary-sub {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Scorecard 18-Hole Table */
+.scorecard-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-oled);
+  min-height: 180px;
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+}
+
+.scorecard-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #16161c;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--surface-border);
+  text-align: center;
+  z-index: 2;
+}
+
+.scorecard-table tbody td {
+  padding: 7px 6px;
+  text-align: center;
+  border-bottom: 1px solid #16161c;
+  font-weight: 700;
+}
+
+.scorecard-row {
   cursor: pointer;
-  padding: 6px 0;
+  transition: background-color 0.12s ease;
 }
 
-.modal-checkbox-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent-green);
+.scorecard-row:hover,
+.scorecard-row:active {
+  background-color: #14141a;
 }
 
+.scorecard-row.is-active-hole {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.scorecard-subtotal-row {
+  background-color: #131318;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.scorecard-subtotal-row td {
+  border-top: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--surface-border);
+  padding: 8px 6px;
+}
+
+.score-diff-pill {
+  display: inline-block;
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.score-diff-pill[data-tone="under"] {
+  background-color: rgba(56, 189, 248, 0.16);
+  color: var(--accent-blue);
+}
+
+.score-diff-pill[data-tone="par"] {
+  background-color: rgba(34, 197, 94, 0.16);
+  color: var(--accent-green-bright);
+}
+
+.score-diff-pill[data-tone="over"] {
+  background-color: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+
+.score-diff-pill[data-tone="unplayed"] {
+  color: var(--text-muted);
+}
+
+/* Custom Course Editor 18-Hole Par Grid */
+.course-editor-summary {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent-green-bright);
+  text-align: center;
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.course-par-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.course-par-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 2px;
+  border-radius: 8px;
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.1s ease, border-color 0.12s ease;
+}
+
+.course-par-cell:active {
+  transform: scale(0.92);
+}
+
+.course-par-cell[data-par="3"] {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.course-par-cell[data-par="4"] {
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.course-par-cell[data-par="5"] {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.course-par-hole-lbl {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.course-par-val {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+/* Modal Footer Actions */
 .modal-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.course-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.course-modal-actions .modal-btn {
+  flex: 1;
 }
 
 .modal-btn {
-  height: 46px;
+  height: 44px;
+  padding: 0 12px;
   border-radius: var(--radius-sm);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 800;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.modal-btn:active {
+  transform: scale(0.96);
 }
 
 .modal-btn.cancel {
@@ -685,7 +1044,19 @@ button:focus-visible {
   color: var(--text-primary);
 }
 
+.modal-btn.primary-green {
+  background-color: var(--accent-green);
+  color: #000000;
+}
+
 .modal-btn.danger {
   background-color: var(--accent-red);
   color: #ffffff;
+}
+
+.modal-btn.danger-outline {
+  background-color: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  color: #fca5a5;
+  flex: 0.7;
 }
