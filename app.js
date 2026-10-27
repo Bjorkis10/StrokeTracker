@@ -1,6 +1,6 @@
 /**
- * StrokeTracker — Cross-Platform Golf Stroke & Handicap Tracker (v1.2)
- * Pure Vanilla ES6+ | Zero Dependencies | Ljungbyheds GK + WHS Slope + Blind Golf Mode
+ * StrokeTracker — Cross-Platform Golf Stroke & Handicap Tracker (v1.3)
+ * Pure Vanilla ES6+ | Zero Dependencies | Net/Gross/Stableford + 1s Hold Reset
  */
 
 (() => {
@@ -15,6 +15,13 @@
     : 'stroketracker_courses_v1';
   const TOTAL_HOLES = 18;
   const DEFAULT_PAR = 4;
+  const LONG_PRESS_MS = 1000;
+
+  // Score Display Modes (cycles on header tap):
+  // 'net'    -> Mode A (Net relative to HCP): e.g. "Net: E" or "Net: +2"
+  // 'gross'  -> Mode B (Gross / Scratch): e.g. "Gross: 54 (+19)"
+  // 'points' -> Mode C (Stableford Points): e.g. "Points: 18p"
+  const SCORE_MODES = ['net', 'gross', 'points'];
 
   // Official Course Presets:
   // 1. Ljungbyheds GK (Par 71) with official Pars and Stroke Indexes (SI)
@@ -23,6 +30,7 @@
     {
       id: 'ljungbyheds-gk',
       name: 'Ljungbyheds GK (Par 71)',
+      isPreset: true,
       isCustom: false,
       pars: [3, 4, 5, 3, 5, 4, 4, 4, 3, 4, 5, 3, 4, 5, 3, 4, 4, 4],
       si: [11, 17, 5, 3, 15, 9, 1, 13, 7, 12, 4, 18, 2, 14, 8, 6, 16, 10],
@@ -30,6 +38,7 @@
     {
       id: 'generic-72',
       name: 'Generic (Par 72)',
+      isPreset: false,
       isCustom: false,
       pars: [4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4],
       si: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
@@ -52,6 +61,7 @@
   };
 
   // --- DOM Elements ---
+  const scoreModeToggleBtn = document.getElementById('scoreModeToggleBtn');
   const topScoreLabel = document.getElementById('topScoreLabel');
   const totalScoreDisplay = document.getElementById('totalScoreDisplay');
   const hideScoreBtn = document.getElementById('hideScoreBtn');
@@ -74,11 +84,13 @@
   const currentHoleExtraStrokesBadge = document.getElementById('currentHoleExtraStrokesBadge');
   const currentHoleExtraDots = document.getElementById('currentHoleExtraDots');
   const currentHoleExtraText = document.getElementById('currentHoleExtraText');
+  const parEditRow = document.getElementById('parEditRow');
   const parPills = document.querySelectorAll('.par-pill');
 
   const addStrokeBtn = document.getElementById('addStrokeBtn');
   const currentHoleStrokes = document.getElementById('currentHoleStrokes');
   const currentHoleTerm = document.getElementById('currentHoleTerm');
+  const longPressHint = document.getElementById('longPressHint');
 
   const undoStrokeBtn = document.getElementById('undoStrokeBtn');
   const viewScorecardBtn = document.getElementById('viewScorecardBtn');
@@ -137,11 +149,14 @@
   let customCourses = loadCustomCourses();
   let state = loadState();
 
-  // Draft state for Round & Handicap Setup Modal
+  // Draft state for modals
   let draftSetup = null;
-  // Draft state for Custom Course Modal
   let editingCourseId = null;
   let draftCoursePars = [];
+
+  // Long-press state for 1-second hole reset
+  let longPressTimer = null;
+  let longPressTriggered = false;
 
   // --- Screen Wake Lock State ---
   let wakeLockSentinel = null;
@@ -152,7 +167,7 @@
     typeof navigator.wakeLock.request === 'function';
 
   // ==========================================================================
-  // 1. Course Presets, Custom Courses & WHS Math Helpers
+  // 1. Course Presets, Custom Courses & WHS / Stableford Math Helpers
   // ==========================================================================
 
   function sanitizeParsArray(pars) {
@@ -183,6 +198,7 @@
         .map((c) => ({
           id: c.id,
           name: c.name.trim().slice(0, 42) || 'Custom Course',
+          isPreset: true,
           isCustom: true,
           pars: sanitizeParsArray(c.pars),
           si: sanitizeSiArray(c.si),
@@ -235,6 +251,15 @@
     return Math.floor(safeHcp / 18) + (safeHcp % 18 >= safeSi ? 1 : 0);
   }
 
+  /**
+   * Stableford Points per Hole:
+   * points = Math.max(0, 2 + (netPar - strokes)) for played holes (strokes > 0)
+   */
+  function calculateStablefordPoints(strokes, netPar) {
+    if (!strokes || strokes <= 0) return 0;
+    return Math.max(0, 2 + (netPar - strokes));
+  }
+
   // ==========================================================================
   // 2. Round State Management & Persistence (localStorage)
   // ==========================================================================
@@ -268,6 +293,7 @@
       exactHcp: defaultExactHcp,
       manualSpelhcp: defaultSpelhcp,
       spelhcp: defaultSpelhcp,
+      scoreViewMode: 'net', // 'net' | 'gross' | 'points'
       hideScore: false,
       holes,
       updatedAt: Date.now(),
@@ -310,6 +336,9 @@
         typeof parsed.manualSpelhcp === 'number' && !Number.isNaN(parsed.manualSpelhcp)
           ? Math.max(0, Math.round(parsed.manualSpelhcp))
           : 38;
+      const scoreViewMode = SCORE_MODES.includes(parsed.scoreViewMode)
+        ? parsed.scoreViewMode
+        : 'net';
 
       const sanitizedHoles = parsed.holes.map((h, idx) => ({
         hole: idx + 1,
@@ -334,6 +363,7 @@
         exactHcp,
         manualSpelhcp,
         spelhcp: 38,
+        scoreViewMode,
         hideScore: Boolean(parsed.hideScore),
         holes: sanitizedHoles,
         updatedAt: parsed.updatedAt || Date.now(),
@@ -382,10 +412,10 @@
   // 3. Tactile Haptic & Micro-Scaling Visual Feedback
   // ==========================================================================
 
-  function triggerFeedback(targetElement) {
+  function triggerFeedback(targetElement, vibratePattern = 50) {
     try {
       if (navigator.vibrate) {
-        navigator.vibrate(50);
+        navigator.vibrate(vibratePattern);
       }
     } catch (_) {
       // Ignore on unsupported devices
@@ -402,7 +432,7 @@
   }
 
   // ==========================================================================
-  // 4. Golf Scoring, Extra Strokes & UI Rendering
+  // 4. Golf Scoring, Extra Strokes, Stableford & UI Rendering
   // ==========================================================================
 
   function formatDiff(diff, hasPlayedHoles = true) {
@@ -424,13 +454,15 @@
         tone: 'neutral',
       };
     }
+
+    const pts = calculateStablefordPoints(strokes, netPar);
     if (strokes === 1) {
-      return { label: `Hole in One! (-${par - 1})`, tone: 'under' };
+      return { label: `Hole in One! • ${pts}p`, tone: 'under' };
     }
 
     const diff = strokes - par;
     const netDiff = strokes - netPar;
-    const netStr = `Net ${formatDiff(netDiff, true)}`;
+    const netStr = `Net ${formatDiff(netDiff, true)} (${pts}p)`;
 
     if (diff <= -3) return { label: `Albatross (${diff}) • ${netStr}`, tone: 'under' };
     if (diff === -2) return { label: `Eagle (-2) • ${netStr}`, tone: 'under' };
@@ -448,6 +480,7 @@
     let playedNetPar = 0;
     let totalPar = 0;
     let totalNetPar = 0;
+    let points = 0;
     let playedCount = 0;
 
     for (const h of holeSlice) {
@@ -460,6 +493,7 @@
         strokes += h.strokes;
         playedPar += h.par;
         playedNetPar += holeNetPar;
+        points += calculateStablefordPoints(h.strokes, holeNetPar);
         playedCount += 1;
       }
     }
@@ -475,6 +509,7 @@
       playedNetPar,
       totalPar,
       totalNetPar,
+      points,
       playedCount,
       diff,
       netDiff,
@@ -563,21 +598,27 @@
     populateCourseDropdown(courseSelect, activeCourse.id);
     headerHcpBadge.textContent = `Spelhcp: ${state.spelhcp}`;
 
-    // 2. Update Cumulative Score Header (with Focus / Blind Mode support)
+    // 2. Update Tappable Score Header (Net / Gross / Stableford + Blind Mode)
     const { total } = computeRoundBreakdown();
+    const devSuffix = IS_DEV ? ' • DEV' : '';
     hideScoreBtn.setAttribute('aria-pressed', String(state.hideScore));
+
     if (state.hideScore) {
       totalScoreDisplay.textContent = 'Score: •••';
       hideScoreIcon.textContent = '🙈';
-      topScoreLabel.textContent = IS_DEV
-        ? 'FOCUS MODE • DEV'
-        : 'ROUND SCORE (HIDDEN)';
+      topScoreLabel.textContent = `FOCUS MODE • HIDDEN${devSuffix}`;
     } else {
-      totalScoreDisplay.textContent = `Score: ${total.strokes} (${total.diffFormatted})`;
       hideScoreIcon.textContent = '👁';
-      topScoreLabel.textContent = IS_DEV
-        ? 'ROUND SCORE • DEV PREVIEW'
-        : 'ROUND SCORE';
+      if (state.scoreViewMode === 'net') {
+        topScoreLabel.textContent = `VIEW: NET vs HCP (TAP)${devSuffix}`;
+        totalScoreDisplay.textContent = `Net: ${total.netDiffFormatted}`;
+      } else if (state.scoreViewMode === 'gross') {
+        topScoreLabel.textContent = `VIEW: GROSS / SCRATCH (TAP)${devSuffix}`;
+        totalScoreDisplay.textContent = `Gross: ${total.strokes} (${total.diffFormatted})`;
+      } else {
+        topScoreLabel.textContent = `VIEW: STABLEFORD (TAP)${devSuffix}`;
+        totalScoreDisplay.textContent = `Points: ${total.points}p`;
+      }
     }
 
     // 3. Update Hole Number, SI Badge, Extra Strokes & Net Par Banner
@@ -599,19 +640,26 @@
       currentHoleExtraText.textContent = '0 extra strokes';
     }
 
-    // 4. Update Par Selector Pills
-    parPills.forEach((pill) => {
-      const pillPar = Number(pill.dataset.par);
-      const isActive = pillPar === active.par;
-      pill.classList.toggle('active', isActive);
-      pill.setAttribute('aria-pressed', String(isActive));
-    });
+    // 4. Hide redundant Par Edit Buttons when a recognized course preset (like Ljungbyheds GK) is active
+    const shouldHideParEdit = Boolean(activeCourse.isPreset);
+    parEditRow.hidden = shouldHideParEdit;
 
-    // 5. Update Current Hole Strokes & Relative Term
+    if (!shouldHideParEdit) {
+      parPills.forEach((pill) => {
+        const pillPar = Number(pill.dataset.par);
+        const isActive = pillPar === active.par;
+        pill.classList.toggle('active', isActive);
+        pill.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    // 5. Update Current Hole Strokes, Term & Long-Press Hint
     currentHoleStrokes.textContent = String(active.strokes);
     const termInfo = getGolfTerm(active.strokes, active.par, netPar);
     currentHoleTerm.textContent = termInfo.label;
     currentHoleTerm.setAttribute('data-tone', termInfo.tone);
+    longPressHint.textContent =
+      active.strokes > 0 ? 'Hold 1s to reset hole to 0' : '';
 
     // 6. Update Undo Button Disabled State
     undoStrokeBtn.disabled = active.strokes <= 0;
@@ -626,8 +674,21 @@
   }
 
   // ==========================================================================
-  // 5. Focus / Hide Score Mode (Blind Golf)
+  // 5. Score Display Mode Cycling & Focus / Hide Score Mode
   // ==========================================================================
+
+  function cycleScoreViewMode() {
+    triggerFeedback(scoreModeToggleBtn);
+    // If score is currently hidden in Focus Mode, unhide on tap or cycle seamlessly
+    if (state.hideScore) {
+      state.hideScore = false;
+    } else {
+      const idx = SCORE_MODES.indexOf(state.scoreViewMode);
+      state.scoreViewMode = SCORE_MODES[(idx + 1) % SCORE_MODES.length];
+    }
+    saveState();
+    render();
+  }
 
   function toggleHideScoreMode() {
     triggerFeedback(hideScoreBtn);
@@ -662,7 +723,6 @@
     const selectedCourse = getCourseById(draftSetup.courseId);
     const coursePar = selectedCourse.pars.reduce((a, b) => a + b, 0);
 
-    // Toggle Mode Tabs
     const isWhs = draftSetup.hcpMode === 'whs';
     tabModeWhs.classList.toggle('active', isWhs);
     tabModeWhs.setAttribute('aria-selected', String(isWhs));
@@ -672,7 +732,6 @@
     whsModePanel.hidden = !isWhs;
     manualModePanel.hidden = isWhs;
 
-    // Update Gender Segmented Control
     genderButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.gender === draftSetup.gender);
     });
@@ -770,7 +829,8 @@
     const pill = document.createElement('span');
     pill.className = 'score-diff-pill';
     pill.setAttribute('data-tone', getDiffTone(stats.diff, stats.playedCount > 0));
-    pill.textContent = stats.playedCount > 0 ? stats.diffFormatted : '—';
+    pill.textContent =
+      stats.playedCount > 0 ? `${stats.diffFormatted} (${stats.points}p)` : '—';
     tdDiff.appendChild(pill);
 
     tr.appendChild(tdLabel);
@@ -792,15 +852,14 @@
 
     scorecardCourseSubtitle.textContent = `${activeCourse.name} • ${hcpDesc}`;
 
-    // The final scorecard always displays the full score regardless of Focus/Hide Score mode
     summaryFront9.textContent = `${front9.strokes} (${front9.diffFormatted})`;
-    summaryFront9Par.textContent = `Par ${front9.totalPar} • Net ${front9.netDiffFormatted}`;
+    summaryFront9Par.textContent = `Net ${front9.netDiffFormatted} • ${front9.points}p`;
 
     summaryBack9.textContent = `${back9.strokes} (${back9.diffFormatted})`;
-    summaryBack9Par.textContent = `Par ${back9.totalPar} • Net ${back9.netDiffFormatted}`;
+    summaryBack9Par.textContent = `Net ${back9.netDiffFormatted} • ${back9.points}p`;
 
     summaryTotal.textContent = `${total.strokes} (${total.diffFormatted})`;
-    summaryTotalPar.textContent = `Par ${total.totalPar} • Net ${total.netDiffFormatted}`;
+    summaryTotalPar.textContent = `Net ${total.netDiffFormatted} • ${total.points}p`;
 
     scorecardTableBody.innerHTML = '';
 
@@ -815,6 +874,7 @@
       const netPar = h.par + extra;
       const isPlayed = h.strokes > 0;
       const holeDiff = h.strokes - h.par;
+      const holePts = calculateStablefordPoints(h.strokes, netPar);
 
       const tdHole = document.createElement('td');
       tdHole.textContent = `${h.hole}`;
@@ -833,7 +893,9 @@
       const pill = document.createElement('span');
       pill.className = 'score-diff-pill';
       pill.setAttribute('data-tone', getDiffTone(holeDiff, isPlayed));
-      pill.textContent = isPlayed ? formatDiff(holeDiff, true) : '—';
+      pill.textContent = isPlayed
+        ? `${formatDiff(holeDiff, true)} (${holePts}p)`
+        : '—';
       tdDiff.appendChild(pill);
 
       tr.appendChild(tdHole);
@@ -886,8 +948,8 @@
           : 'Manual'
       })`,
       `Date: ${dateStr}`,
-      `Gross Score: ${total.strokes} (${total.diffFormatted}) | Net vs Par: ${total.netDiffFormatted}`,
-      `Out (1-9): ${front9.strokes} (${front9.diffFormatted}) | In (10-18): ${back9.strokes} (${back9.diffFormatted})`,
+      `Gross: ${total.strokes} (${total.diffFormatted}) | Net: ${total.netDiffFormatted} | Stableford: ${total.points}p`,
+      `Out (1-9): ${front9.strokes} (${front9.diffFormatted}, ${front9.points}p) | In (10-18): ${back9.strokes} (${back9.diffFormatted}, ${back9.points}p)`,
       `----------------------------------------`,
       `FRONT 9 (OUT - Par ${front9.totalPar}):`,
     ];
@@ -906,15 +968,16 @@
     lines.push(back9Line);
 
     lines.push(`----------------------------------------`);
-    lines.push(`Hole-by-Hole (Hole | SI | Par (Net) | Strokes | Gross +/-):`);
+    lines.push(`Hole-by-Hole (Hole | SI | Par (Net) | Strokes | Gross +/- | Pts):`);
     state.holes.forEach((h) => {
       const extra = getExtraStrokesForHole(state.spelhcp, h.si);
       const netPar = h.par + extra;
       const isPlayed = h.strokes > 0;
       const diffStr = isPlayed ? formatDiff(h.strokes - h.par, true) : '-';
+      const ptsStr = isPlayed ? `${calculateStablefordPoints(h.strokes, netPar)}p` : '-';
       const strokeStr = isPlayed ? String(h.strokes) : '-';
       lines.push(
-        `Hole ${String(h.hole).padStart(2, ' ')} | SI ${String(h.si).padStart(2, ' ')} | Par ${h.par} (Net ${netPar}) | Strokes: ${strokeStr} (${diffStr})`
+        `Hole ${String(h.hole).padStart(2, ' ')} | SI ${String(h.si).padStart(2, ' ')} | Par ${h.par} (Net ${netPar}) | Strokes: ${strokeStr} (${diffStr}, ${ptsStr})`
       );
     });
 
@@ -1045,6 +1108,7 @@
       customCourses.push({
         id: targetCourseId,
         name: courseName,
+        isPreset: true,
         isCustom: true,
         pars: cleanPars,
         si: standardSi,
@@ -1066,7 +1130,7 @@
   }
 
   // ==========================================================================
-  // 9. Core Gameplay Actions (Add Stroke, Undo, Par Edit, Navigation, Reset)
+  // 9. Core Gameplay Actions (+1 Stroke, 1s Hold Reset, Undo, Par Edit, Nav)
   // ==========================================================================
 
   function addStroke() {
@@ -1075,6 +1139,46 @@
     saveState();
     render();
     triggerFeedback(addStrokeBtn);
+  }
+
+  function resetCurrentHoleToZero() {
+    const active = getActiveHoleData();
+    if (active.strokes <= 0) return;
+
+    active.strokes = 0;
+    saveState();
+    render();
+
+    // Confirmation vibration pattern + visual flash
+    triggerFeedback(addStrokeBtn, [70, 40, 90]);
+    addStrokeBtn.classList.add('reset-flash');
+    currentHoleTerm.textContent = 'Hole reset to 0';
+    setTimeout(() => {
+      addStrokeBtn.classList.remove('reset-flash');
+      render();
+    }, 650);
+  }
+
+  function startLongPressTimer() {
+    clearLongPressTimer();
+    const active = getActiveHoleData();
+    if (active.strokes <= 0) return;
+
+    addStrokeBtn.classList.add('holding-reset');
+    longPressTimer = setTimeout(() => {
+      longPressTimer = null;
+      longPressTriggered = true;
+      addStrokeBtn.classList.remove('holding-reset');
+      resetCurrentHoleToZero();
+    }, LONG_PRESS_MS);
+  }
+
+  function clearLongPressTimer() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    addStrokeBtn.classList.remove('holding-reset');
   }
 
   function undoStroke() {
@@ -1230,8 +1334,29 @@
   // 11. Event Listeners & Desktop Keyboard Shortcuts
   // ==========================================================================
 
-  addStrokeBtn.addEventListener('click', addStroke);
+  // Primary +1 Stroke button with 1-second long-press hole reset
+  addStrokeBtn.addEventListener('pointerdown', (e) => {
+    if (e.button && e.button !== 0) return;
+    longPressTriggered = false;
+    startLongPressTimer();
+  });
+
+  addStrokeBtn.addEventListener('pointerup', clearLongPressTimer);
+  addStrokeBtn.addEventListener('pointerleave', clearLongPressTimer);
+  addStrokeBtn.addEventListener('pointercancel', clearLongPressTimer);
+  addStrokeBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  addStrokeBtn.addEventListener('click', (e) => {
+    if (longPressTriggered) {
+      longPressTriggered = false;
+      e.preventDefault();
+      return;
+    }
+    addStroke();
+  });
+
   undoStrokeBtn.addEventListener('click', undoStroke);
+  scoreModeToggleBtn.addEventListener('click', cycleScoreViewMode);
   hideScoreBtn.addEventListener('click', toggleHideScoreMode);
 
   courseSelect.addEventListener('change', (e) => {
@@ -1368,6 +1493,7 @@
   // Space or + : Add stroke
   // - or Backspace : Undo stroke
   // ArrowRight / ArrowLeft : Next / Previous hole
+  // M : Cycle Score View Mode (Net / Gross / Stableford)
   // S : Open Scorecard Modal
   // H : Toggle Focus / Hide Score Mode
   window.addEventListener('keydown', (e) => {
@@ -1414,6 +1540,9 @@
       e.preventDefault();
       triggerFeedback(prevHoleBtn);
       selectHole(state.currentHole - 1);
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      cycleScoreViewMode();
     } else if (e.key === 's' || e.key === 'S') {
       e.preventDefault();
       openScorecardModal();
@@ -1440,7 +1569,6 @@
 
   if (IS_DEV) {
     document.title = '[DEV] ' + document.title;
-    topScoreLabel.style.color = '#f59e0b';
   }
 
   render();

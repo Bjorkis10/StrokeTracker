@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="OLED-optimized cross-platform golf stroke tracker with WHS Handicap & Ljungbyheds GK preset." />
+  <meta name="description" content="OLED-optimized cross-platform golf stroke tracker with WHS Handicap, Stableford & Ljungbyheds GK preset." />
 
   <!-- iOS / Apple PWA Standalone Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -23,14 +23,21 @@
 </head>
 <body>
   <main class="app-shell" id="appShell" aria-label="Golf Stroke Tracker">
-    <!-- Top Header: Cumulative Score, Focus/Blind Mode Toggle, Wake Lock & Setup Bar -->
+    <!-- Top Header: Tappable Score Mode Button (Net / Gross / Stableford), Focus Toggle, Wake Lock & Setup Bar -->
     <header class="top-header-group">
       <div class="top-bar">
         <div class="score-header-left">
-          <div class="total-score-block" aria-live="polite">
-            <span class="top-label" id="topScoreLabel">ROUND SCORE</span>
-            <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
-          </div>
+          <button
+            type="button"
+            id="scoreModeToggleBtn"
+            class="total-score-btn"
+            aria-live="polite"
+            aria-label="Cycle score display mode between Net, Gross, and Stableford Points"
+            title="Tap to cycle: Net vs HCP / Gross / Stableford Points"
+          >
+            <span class="top-label" id="topScoreLabel">VIEW: NET (TAP TO SWITCH)</span>
+            <span class="total-score-value" id="totalScoreDisplay">Net: E</span>
+          </button>
 
           <button
             type="button"
@@ -126,8 +133,8 @@
         </div>
       </div>
 
-      <!-- Editable Par Selector -->
-      <div class="par-row" role="group" aria-label="Select Par for current hole">
+      <!-- Editable Par Selector (Automatically hidden when a preset course like Ljungbyheds GK is active) -->
+      <div id="parEditRow" class="par-row" role="group" aria-label="Select Par for current hole" hidden>
         <span class="par-label">EDIT PAR</span>
         <div class="par-pills">
           <button type="button" class="par-pill" data-par="3">Par 3</button>
@@ -146,13 +153,13 @@
       </div>
     </section>
 
-    <!-- Primary Oversized Glove-Friendly +1 Stroke Tap Area -->
+    <!-- Primary Oversized Glove-Friendly +1 Stroke Tap Area (Long-Press 1s to Reset Hole to 0) -->
     <section class="primary-action-zone">
       <button
         type="button"
         id="addStrokeBtn"
         class="add-stroke-btn"
-        aria-label="Add 1 Stroke"
+        aria-label="Tap to add 1 stroke. Hold for 1 second to reset current hole to 0."
       >
         <div class="stroke-readout" aria-live="polite">
           <span class="stroke-count" id="currentHoleStrokes">0</span>
@@ -162,6 +169,7 @@
           <span class="plus-icon" aria-hidden="true">+1</span>
           <span class="cta-label">STROKE</span>
         </div>
+        <span class="long-press-hint" id="longPressHint">Hold 1s on number to reset hole</span>
       </button>
     </section>
 
@@ -203,8 +211,9 @@
       <span><kbd>Space</kbd>/<kbd>+</kbd> +1</span>
       <span><kbd>-</kbd>/<kbd>Bksp</kbd> Undo</span>
       <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> Hole</span>
-      <span><kbd>S</kbd> Scorecard</span>
-      <span><kbd>H</kbd> Hide Score</span>
+      <span><kbd>M</kbd> Mode</span>
+      <span><kbd>S</kbd> Card</span>
+      <span><kbd>H</kbd> Hide</span>
     </aside>
 
     <!-- ======================================================================
@@ -398,7 +407,7 @@
             <span class="summary-sub" id="summaryBack9Par">Par 36</span>
           </div>
           <div class="summary-box highlight">
-            <span class="summary-label">TOTAL (GROSS)</span>
+            <span class="summary-label">TOTAL</span>
             <span class="summary-val" id="summaryTotal">0 (E)</span>
             <span class="summary-sub" id="summaryTotalPar">Par 71</span>
           </div>
@@ -413,7 +422,7 @@
                 <th scope="col">SI</th>
                 <th scope="col">Par (Net)</th>
                 <th scope="col">Strokes</th>
-                <th scope="col">+/&minus;</th>
+                <th scope="col">+/&minus; (Pts)</th>
               </tr>
             </thead>
             <tbody id="scorecardTableBody"></tbody>
