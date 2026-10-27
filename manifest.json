@@ -1,0 +1,25 @@
+{
+  "name": "StrokeTracker Golf",
+  "short_name": "StrokeTracker",
+  "description": "High-contrast OLED golf stroke and par tracker for iOS, Android, and Desktop.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%2322c55e' stroke-width='20'/%3E%3Cpath d='M236 128v220M236 128l116 54-116 54' fill='%2322c55e' stroke='%2322c55e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='256' cy='364' rx='72' ry='22' fill='none' stroke='%23ffffff' stroke-width='16'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%2322c55e' stroke-width='20'/%3E%3Cpath d='M236 128v220M236 128l116 54-116 54' fill='%2322c55e' stroke='%2322c55e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='256' cy='364' rx='72' ry='22' fill='none' stroke='%23ffffff' stroke-width='16'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

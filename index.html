@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="OLED-optimized cross-platform golf stroke tracker for iOS, Android, and Desktop." />
+
+  <!-- iOS / Apple PWA Standalone Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="StrokeTracker" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%2322c55e' stroke-width='20'/%3E%3Cpath d='M236 128v220M236 128l116 54-116 54' fill='%2322c55e' stroke='%2322c55e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='256' cy='364' rx='72' ry='22' fill='none' stroke='%23ffffff' stroke-width='16'/%3E%3C/svg%3E" />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%2322c55e' stroke-width='20'/%3E%3Cpath d='M236 128v220M236 128l116 54-116 54' fill='%2322c55e' stroke='%2322c55e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='256' cy='364' rx='72' ry='22' fill='none' stroke='%23ffffff' stroke-width='16'/%3E%3C/svg%3E" />
+
+  <title>StrokeTracker — Golf Score &amp; Stroke Counter</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell" id="appShell" aria-label="Golf Stroke Tracker">
+    <!-- Top Header: Cumulative Score & Screen Wake Lock Badge -->
+    <header class="top-bar">
+      <div class="total-score-block" aria-live="polite">
+        <span class="top-label">ROUND SCORE</span>
+        <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
+      </div>
+
+      <button
+        type="button"
+        id="wakeLockBtn"
+        class="wakelock-badge"
+        data-state="inactive"
+        aria-label="Toggle Screen Always On"
+        title="Toggle Screen Wake Lock"
+      >
+        <span class="wakelock-dot" aria-hidden="true"></span>
+        <span class="wakelock-text" id="wakeLockText">Screen Always On: Inactive</span>
+      </button>
+    </header>
+
+    <!-- Hole Navigation & Editable Par Controls -->
+    <section class="hole-panel" aria-label="Hole Navigation and Par Settings">
+      <div class="hole-nav-row">
+        <button
+          type="button"
+          id="prevHoleBtn"
+          class="nav-btn"
+          aria-label="Previous Hole"
+        >
+          <span aria-hidden="true">&larr;</span>
+          <span class="nav-btn-label">Prev</span>
+        </button>
+
+        <button
+          type="button"
+          id="holeJumpToggleBtn"
+          class="hole-title-btn"
+          aria-expanded="false"
+          aria-controls="holeJumpDrawer"
+          title="Tap to jump to any hole (1–18)"
+        >
+          <span class="hole-prefix">HOLE</span>
+          <span class="hole-number" id="currentHoleNumber">1</span>
+          <span class="hole-caret" aria-hidden="true">&#9662;</span>
+        </button>
+
+        <button
+          type="button"
+          id="nextHoleBtn"
+          class="nav-btn"
+          aria-label="Next Hole"
+        >
+          <span class="nav-btn-label">Next</span>
+          <span aria-hidden="true">&rarr;</span>
+        </button>
+      </div>
+
+      <!-- Editable Par Selector (Default Par 4) -->
+      <div class="par-row" role="group" aria-label="Select Par for current hole">
+        <span class="par-label">HOLE PAR</span>
+        <div class="par-pills">
+          <button type="button" class="par-pill" data-par="3">Par 3</button>
+          <button type="button" class="par-pill active" data-par="4">Par 4</button>
+          <button type="button" class="par-pill" data-par="5">Par 5</button>
+        </div>
+      </div>
+
+      <!-- Quick-Jump 1–18 Drawer (Collapsible) -->
+      <div id="holeJumpDrawer" class="hole-jump-drawer" hidden>
+        <div class="drawer-header">
+          <span>Quick Jump (Holes 1–18)</span>
+          <span class="drawer-legend">Number = Hole &bull; Badge = Strokes</span>
+        </div>
+        <div class="hole-grid" id="holeGrid" role="list"></div>
+      </div>
+    </section>
+
+    <!-- Primary Oversized Glove-Friendly +1 Stroke Tap Area -->
+    <section class="primary-action-zone">
+      <button
+        type="button"
+        id="addStrokeBtn"
+        class="add-stroke-btn"
+        aria-label="Add 1 Stroke"
+      >
+        <div class="stroke-readout" aria-live="polite">
+          <span class="stroke-count" id="currentHoleStrokes">0</span>
+          <span class="stroke-term" id="currentHoleTerm">Tap to start hole</span>
+        </div>
+        <div class="add-stroke-cta">
+          <span class="plus-icon" aria-hidden="true">+1</span>
+          <span class="cta-label">STROKE</span>
+        </div>
+      </button>
+    </section>
+
+    <!-- Separated Bottom Controls: Undo (-1) & Reset / New Round -->
+    <footer class="bottom-controls">
+      <button
+        type="button"
+        id="undoStrokeBtn"
+        class="secondary-btn undo-btn"
+        aria-label="Undo last stroke (-1)"
+      >
+        <span class="btn-symbol" aria-hidden="true">&minus;1</span>
+        <span>Undo Stroke</span>
+      </button>
+
+      <button
+        type="button"
+        id="resetRoundBtn"
+        class="secondary-btn reset-btn"
+        aria-label="Reset scores and start a new round"
+      >
+        <span class="btn-symbol" aria-hidden="true">&#8635;</span>
+        <span>New Round</span>
+      </button>
+    </footer>
+
+    <!-- Desktop Keyboard Shortcuts Hint -->
+    <aside class="keyboard-hints" aria-hidden="true">
+      <span><kbd>Space</kbd> / <kbd>+</kbd> +1 Stroke</span>
+      <span><kbd>-</kbd> / <kbd>Backspace</kbd> Undo</span>
+      <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Hole</span>
+    </aside>
+
+    <!-- Accessible Confirmation Modal for Reset / New Round -->
+    <div
+      id="confirmModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+      aria-describedby="modalDesc"
+      hidden
+    >
+      <div class="modal-card">
+        <h2 id="modalTitle" class="modal-title">Start New Round?</h2>
+        <p id="modalDesc" class="modal-desc">
+          This will reset all 18 holes back to 0 strokes. Do you want to continue?
+        </p>
+        <label class="modal-checkbox-row">
+          <input type="checkbox" id="resetParsCheckbox" />
+          <span>Also reset all holes to default Par 4</span>
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelResetBtn" class="modal-btn cancel">
+            Cancel
+          </button>
+          <button type="button" id="confirmResetBtn" class="modal-btn danger">
+            Reset Round
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
