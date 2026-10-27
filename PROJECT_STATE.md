@@ -1,6 +1,6 @@
 # StrokeTracker — Project State & Memory Bank
 
-> **Status:** Version 1.3 Complete (Net/Gross/Stableford Toggle, Decluttered Play UI & 1s Hold Reset)
+> **Status:** Version 1.4 Complete (Live on Production & Dev GitHub Pages)
 > **Production App URL (`origin`):** https://bjorkis10.github.io/StrokeTracker/
 > **Dev Preview App URL (`dev`):** https://bjorkis10.github.io/StrokeTracker-dev/
 > **GitHub Repositories:** [Production](https://github.com/Bjorkis10/StrokeTracker) | [Dev Preview](https://github.com/Bjorkis10/StrokeTracker-dev)
@@ -8,11 +8,12 @@
 
 ---
 
-## 1. Current Features Implemented (v1.3)
-- [x] **HCP Score vs. Course Score Header Toggle (`v1.3`)**:
+## 1. Current Features Implemented (v1.4)
+- [x] **HCP Score vs. Course Score Toggle (Header & Scorecard Synced — `v1.4`)**:
   - Tappable top score header (`#scoreModeToggleBtn`, desktop shortcut `M`) keeps the clean `Score: X (E / ±Y)` format and toggles between:
-    - **HCP Score (`net`):** `HCP SCORE` — `Score: 16 (-7)` (strokes + score relative to your Net/HCP par)
-    - **Course Score (`gross`):** `COURSE SCORE` — `Score: 16 (+1)` (strokes + score relative to the course's scratch par)
+    - **HCP Score (`net`):** `HCP SCORE` — e.g., `Score: 16 (-7)` (total strokes + score relative to your Net/HCP par)
+    - **Course Score (`gross`):** `COURSE SCORE` — e.g., `Score: 16 (+1)` (total strokes + score relative to the course's scratch par)
+  - The **Scorecard Modal** includes matching **`HCP Score (Net)` | `Course Score`** tabs at the top, dynamically switching the summary boxes (`TOTAL (HCP)` vs `TOTAL (COURSE)`) and every hole's `+/-` badge between Net Par `+/-` and Course Par `+/-`.
   - Persists preferred `scoreViewMode` in `localStorage`.
 - [x] **Decluttered Preset Play Screen (`v1.3`)**:
   - Automatically hides the redundant `EDIT PAR: Par 3 / Par 4 / Par 5` selector row (`#parEditRow`) whenever a recognized course preset (such as **Ljungbyheds GK (Par 71)** or a saved custom course) is active, giving that vertical space to the oversized `+1 STROKE` tap target.
@@ -30,14 +31,15 @@
   - Active hole view displays the **SI badge** (`SI 11`), calculated **Net Par** (`Par 3 (Net 5)`), and visual **extra strokes indicator** (`•• +2 strokes`).
 - [x] **"Focus / Hide Score" Mode — Blind Golf (`v1.2`)**:
   - Eye toggle button (`#hideScoreBtn`, keyboard shortcut `H`) in the header bar masks the running cumulative total (`Score: •••`).
-- [x] **Scorecard Modal, Golf GameBook Summary & Network-First Offline Service Worker (`v1.1–v1.3`)**:
-  - 18-hole table with Front 9 (`OUT`), Back 9 (`IN`), and `TOTAL` subtotals (including Net and Stableford points), one-click `Copy Summary` formatted for **Golf GameBook**, and `sw.js` (`stroketracker-cache-v4`) using Network-First + Offline Cache Fallback.
+- [x] **Golf GameBook Summary Export & Network-First Offline Service Worker (`v1.1–v1.4`)**:
+  - One-click `Copy Summary` inside the Scorecard Modal formatted for **Golf GameBook**.
+  - `sw.js` (`stroketracker-cache-v5`) uses Network-First with `cache: 'no-cache'` revalidation and Offline Cache Fallback (plus `?v=1.4` asset cache-busting) so updates load immediately when online and work 100% offline with zero mobile reception.
 - [x] **Universal PWA, Screen Wake Lock & Responsive OLED UI (`v1.0`)**:
   - Pure `#000000` OLED design, `100dvh` + `env(safe-area-inset-*)` layout, automatic `navigator.wakeLock`, guarded `navigator.vibrate(50)` + `.tap-pulse` animation, and isolated Dev/Prod `localStorage` keys.
 
 ---
 
-## 2. Course Data & WHS / Stableford Formulas
+## 2. Course Data & WHS Handicap Formulas
 
 ### Ljungbyheds GK (Par 71) Official Layout
 | Hole | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | **OUT** | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | **IN** | **TOT** |
@@ -56,7 +58,7 @@
 | **Dam (Women)** | **Röd** | `118` | `70.0` |
 | **Dam (Women)** | **Orange** | `106` | `64.2` |
 
-### Handicap & Stableford Math Formulas
+### Handicap Math Formulas
 1. **WHS Playing Handicap (`spelhcp`):**
    ```js
    spelhcp = Math.round(exactHcp * (slope / 113) + (cr - par));
@@ -66,20 +68,16 @@
    extraStrokes = Math.floor(spelhcp / 18) + (spelhcp % 18 >= hole.si ? 1 : 0);
    netPar = hole.par + extraStrokes;
    ```
-3. **Stableford Points per Played Hole:**
-   ```js
-   holePoints = strokes > 0 ? Math.max(0, 2 + (netPar - strokes)) : 0;
-   ```
 
 ---
 
 ## 3. Architecture & Tech Stack
 - **Core Stack:** Pure Vanilla HTML5, CSS3, and ES6+ JavaScript (Zero build dependencies).
 - **Modular Files:**
-  - `index.html` — Semantic application layout, tappable Score Mode header button, Focus Mode eye toggle, Net Par & Extra Strokes hole banner, Dual Handicap Setup Modal, Scorecard Modal, and Custom Course Editor Modal.
+  - `index.html` — Semantic application layout, tappable Score Mode header button, Focus Mode eye toggle, Net Par & Extra Strokes hole banner, Dual Handicap Setup Modal, Scorecard Modal with HCP/Course toggle, and Custom Course Editor Modal.
   - `style.css` — OLED `#000000` theme, `100dvh` + safe-area inset layout, desktop phone-card frame, Net Par banner, 1s hold-reset animations, WHS segmented controls, and scorecard table styles.
-  - `app.js` — State engine, `localStorage` persistence (`stroketracker_state_v1`, `stroketracker_courses_v1`, with automatic `stroketracker_dev_*` isolation on `-dev`), WHS Slope & Stableford calculator, 1s long-press hole reset, Screen Wake Lock manager, Golf GameBook exporter, and keyboard shortcuts.
-  - `sw.js` — Network-First with Offline Cache Fallback Service Worker (`stroketracker-cache-v4`).
+  - `app.js` — State engine, `localStorage` persistence (`stroketracker_state_v1`, `stroketracker_courses_v1`, with automatic `stroketracker_dev_*` isolation on `-dev`), WHS Slope calculator, 1s long-press hole reset, Screen Wake Lock manager, Golf GameBook exporter, and keyboard shortcuts.
+  - `sw.js` — Network-First (`cache: 'no-cache'`) with Offline Cache Fallback Service Worker (`stroketracker-cache-v5`).
   - `manifest.json` — Standalone Web App Manifest.
 
 ---
