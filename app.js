@@ -116,12 +116,16 @@
   // Scorecard Modal Elements
   const scorecardModal = document.getElementById('scorecardModal');
   const scorecardCourseSubtitle = document.getElementById('scorecardCourseSubtitle');
+  const scorecardModeNetBtn = document.getElementById('scorecardModeNetBtn');
+  const scorecardModeGrossBtn = document.getElementById('scorecardModeGrossBtn');
   const summaryFront9 = document.getElementById('summaryFront9');
   const summaryFront9Par = document.getElementById('summaryFront9Par');
   const summaryBack9 = document.getElementById('summaryBack9');
   const summaryBack9Par = document.getElementById('summaryBack9Par');
+  const summaryTotalLabel = document.getElementById('summaryTotalLabel');
   const summaryTotal = document.getElementById('summaryTotal');
   const summaryTotalPar = document.getElementById('summaryTotalPar');
+  const scorecardDiffColHeader = document.getElementById('scorecardDiffColHeader');
   const scorecardTableBody = document.getElementById('scorecardTableBody');
   const copySummaryBtn = document.getElementById('copySummaryBtn');
   const closeScorecardBtn = document.getElementById('closeScorecardBtn');
@@ -800,7 +804,7 @@
   // 7. Scorecard Modal & Golf GameBook Summary Export
   // ==========================================================================
 
-  function createSubtotalRow(label, stats) {
+  function createSubtotalRow(label, stats, isNetMode) {
     const tr = document.createElement('tr');
     tr.className = 'scorecard-subtotal-row';
 
@@ -816,12 +820,16 @@
     const tdStrokes = document.createElement('td');
     tdStrokes.textContent = stats.playedCount > 0 ? String(stats.strokes) : '—';
 
+    const activeDiff = isNetMode ? stats.netDiff : stats.diff;
+    const activeDiffFormatted = isNetMode
+      ? stats.netDiffFormatted
+      : stats.diffFormatted;
+
     const tdDiff = document.createElement('td');
     const pill = document.createElement('span');
     pill.className = 'score-diff-pill';
-    pill.setAttribute('data-tone', getDiffTone(stats.diff, stats.playedCount > 0));
-    pill.textContent =
-      stats.playedCount > 0 ? `${stats.diffFormatted} (${stats.points}p)` : '—';
+    pill.setAttribute('data-tone', getDiffTone(activeDiff, stats.playedCount > 0));
+    pill.textContent = stats.playedCount > 0 ? activeDiffFormatted : '—';
     tdDiff.appendChild(pill);
 
     tr.appendChild(tdLabel);
@@ -836,6 +844,8 @@
     const activeCourse = getCourseById(state.selectedCourseId);
     const { front9, back9, total } = computeRoundBreakdown();
     const tee = getTeeObject(state.gender, state.teeId);
+    const isNetMode = state.scoreViewMode === 'net';
+
     const hcpDesc =
       state.hcpMode === 'whs'
         ? `Spelhcp ${state.spelhcp} (${state.gender === 'dam' ? 'Dam' : 'Herr'} ${tee.label}, HCP ${state.exactHcp.toFixed(1)})`
@@ -843,14 +853,35 @@
 
     scorecardCourseSubtitle.textContent = `${activeCourse.name} • ${hcpDesc}`;
 
-    summaryFront9.textContent = `${front9.strokes} (${front9.diffFormatted})`;
-    summaryFront9Par.textContent = `Net ${front9.netDiffFormatted} • ${front9.points}p`;
+    // Sync Scorecard Mode Tabs
+    scorecardModeNetBtn.classList.toggle('active', isNetMode);
+    scorecardModeNetBtn.setAttribute('aria-selected', String(isNetMode));
+    scorecardModeGrossBtn.classList.toggle('active', !isNetMode);
+    scorecardModeGrossBtn.setAttribute('aria-selected', String(!isNetMode));
 
-    summaryBack9.textContent = `${back9.strokes} (${back9.diffFormatted})`;
-    summaryBack9Par.textContent = `Net ${back9.netDiffFormatted} • ${back9.points}p`;
+    scorecardDiffColHeader.textContent = isNetMode ? 'HCP +/−' : 'COURSE +/−';
 
-    summaryTotal.textContent = `${total.strokes} (${total.diffFormatted})`;
-    summaryTotalPar.textContent = `Net ${total.netDiffFormatted} • ${total.points}p`;
+    if (isNetMode) {
+      summaryFront9.textContent = `${front9.strokes} (${front9.netDiffFormatted})`;
+      summaryFront9Par.textContent = `Course: ${front9.diffFormatted}`;
+
+      summaryBack9.textContent = `${back9.strokes} (${back9.netDiffFormatted})`;
+      summaryBack9Par.textContent = `Course: ${back9.diffFormatted}`;
+
+      summaryTotalLabel.textContent = 'TOTAL (HCP)';
+      summaryTotal.textContent = `${total.strokes} (${total.netDiffFormatted})`;
+      summaryTotalPar.textContent = `Course: ${total.diffFormatted}`;
+    } else {
+      summaryFront9.textContent = `${front9.strokes} (${front9.diffFormatted})`;
+      summaryFront9Par.textContent = `HCP: ${front9.netDiffFormatted}`;
+
+      summaryBack9.textContent = `${back9.strokes} (${back9.diffFormatted})`;
+      summaryBack9Par.textContent = `HCP: ${back9.netDiffFormatted}`;
+
+      summaryTotalLabel.textContent = 'TOTAL (COURSE)';
+      summaryTotal.textContent = `${total.strokes} (${total.diffFormatted})`;
+      summaryTotalPar.textContent = `HCP: ${total.netDiffFormatted}`;
+    }
 
     scorecardTableBody.innerHTML = '';
 
@@ -864,8 +895,7 @@
       const extra = getExtraStrokesForHole(state.spelhcp, h.si);
       const netPar = h.par + extra;
       const isPlayed = h.strokes > 0;
-      const holeDiff = h.strokes - h.par;
-      const holePts = calculateStablefordPoints(h.strokes, netPar);
+      const holeDiff = isNetMode ? h.strokes - netPar : h.strokes - h.par;
 
       const tdHole = document.createElement('td');
       tdHole.textContent = `${h.hole}`;
@@ -884,9 +914,7 @@
       const pill = document.createElement('span');
       pill.className = 'score-diff-pill';
       pill.setAttribute('data-tone', getDiffTone(holeDiff, isPlayed));
-      pill.textContent = isPlayed
-        ? `${formatDiff(holeDiff, true)} (${holePts}p)`
-        : '—';
+      pill.textContent = isPlayed ? formatDiff(holeDiff, true) : '—';
       tdDiff.appendChild(pill);
 
       tr.appendChild(tdHole);
@@ -904,11 +932,17 @@
       scorecardTableBody.appendChild(tr);
 
       if (idx === 8) {
-        scorecardTableBody.appendChild(createSubtotalRow('OUT (1–9)', front9));
+        scorecardTableBody.appendChild(
+          createSubtotalRow('OUT (1–9)', front9, isNetMode)
+        );
       }
       if (idx === 17) {
-        scorecardTableBody.appendChild(createSubtotalRow('IN (10–18)', back9));
-        scorecardTableBody.appendChild(createSubtotalRow('TOTAL', total));
+        scorecardTableBody.appendChild(
+          createSubtotalRow('IN (10–18)', back9, isNetMode)
+        );
+        scorecardTableBody.appendChild(
+          createSubtotalRow('TOTAL', total, isNetMode)
+        );
       }
     });
   }
@@ -1442,6 +1476,20 @@
   closeScorecardBtn.addEventListener('click', closeScorecardModal);
   closeScorecardIconBtn.addEventListener('click', closeScorecardModal);
   copySummaryBtn.addEventListener('click', copyRoundSummary);
+
+  scorecardModeNetBtn.addEventListener('click', () => {
+    triggerFeedback(scorecardModeNetBtn);
+    state.scoreViewMode = 'net';
+    saveState();
+    render();
+  });
+
+  scorecardModeGrossBtn.addEventListener('click', () => {
+    triggerFeedback(scorecardModeGrossBtn);
+    state.scoreViewMode = 'gross';
+    saveState();
+    render();
+  });
 
   scorecardModal.addEventListener('click', (e) => {
     if (e.target === scorecardModal) closeScorecardModal();

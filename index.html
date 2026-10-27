@@ -394,6 +394,28 @@
           </button>
         </div>
 
+        <!-- Scorecard View Mode Toggle (Synced with Main Header) -->
+        <div class="mode-tabs" role="tablist" aria-label="Scorecard Scoring View">
+          <button
+            type="button"
+            id="scorecardModeNetBtn"
+            class="mode-tab active"
+            role="tab"
+            aria-selected="true"
+          >
+            HCP Score (Net)
+          </button>
+          <button
+            type="button"
+            id="scorecardModeGrossBtn"
+            class="mode-tab"
+            role="tab"
+            aria-selected="false"
+          >
+            Course Score
+          </button>
+        </div>
+
         <!-- Front 9 / Back 9 / Total Summary Strip -->
         <div class="scorecard-summary-strip">
           <div class="summary-box">
@@ -407,9 +429,9 @@
             <span class="summary-sub" id="summaryBack9Par">Par 36</span>
           </div>
           <div class="summary-box highlight">
-            <span class="summary-label">TOTAL</span>
+            <span class="summary-label" id="summaryTotalLabel">TOTAL (HCP)</span>
             <span class="summary-val" id="summaryTotal">0 (E)</span>
-            <span class="summary-sub" id="summaryTotalPar">Par 71</span>
+            <span class="summary-sub" id="summaryTotalPar">Course: E</span>
           </div>
         </div>
 
@@ -422,7 +444,7 @@
                 <th scope="col">SI</th>
                 <th scope="col">Par (Net)</th>
                 <th scope="col">Strokes</th>
-                <th scope="col">+/&minus; (Pts)</th>
+                <th scope="col" id="scorecardDiffColHeader">HCP +/&minus;</th>
               </tr>
             </thead>
             <tbody id="scorecardTableBody"></tbody>
