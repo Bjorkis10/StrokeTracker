@@ -1,6 +1,8 @@
 # StrokeTracker — Project State & Memory Bank
 
-> **Status:** Version 1.0 Complete (Production Ready)
+> **Status:** Version 1.0 Complete (Deployed to GitHub Pages)
+> **Live App URL:** https://bjorkis10.github.io/StrokeTracker/
+> **GitHub Repository:** https://github.com/Bjorkis10/StrokeTracker
 > **Last Updated:** 2026-10-27
 
 ---
