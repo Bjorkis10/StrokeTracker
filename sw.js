@@ -1,16 +1,16 @@
 /**
  * StrokeTracker Service Worker (sw.js)
- * Network-First with Offline Cache Fallback:
- * - Always fetches latest code when online (no Ctrl+F5 needed after deploys)
+ * Network-First with cache: 'no-cache' revalidation & Offline Cache Fallback:
+ * - Bypasses stale browser HTTP disk cache when online so new updates always load
  * - Seamlessly serves cached app shell when offline with zero mobile reception
  */
 
-const CACHE_NAME = 'stroketracker-cache-v4';
+const CACHE_NAME = 'stroketracker-cache-v5';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './style.css?v=1.4',
+  './app.js?v=1.4',
   './manifest.json',
 ];
 
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((networkResponse) => {
         if (
           networkResponse &&
@@ -59,6 +59,8 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() =>
+        caches.match(event.request, { ignoreSearch: true })
+      )
   );
 });
