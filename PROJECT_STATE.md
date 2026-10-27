@@ -9,11 +9,10 @@
 ---
 
 ## 1. Current Features Implemented (v1.3)
-- [x] **Gross / Net / Stableford Score Header Toggle (`v1.3`)**:
-  - Tappable top score header (`#scoreModeToggleBtn`, desktop shortcut `M`) cycles through three live scoring views with a subtle active mode label:
-    - **Mode A (`net` — Net relative to HCP):** e.g., `Net: E` or `Net: +2` (`VIEW: NET vs HCP (TAP)`)
-    - **Mode B (`gross` — Gross / Scratch):** e.g., `Gross: 54 (+19)` (`VIEW: GROSS / SCRATCH (TAP)`)
-    - **Mode C (`points` — Stableford Points):** e.g., `Points: 18p` (`VIEW: STABLEFORD (TAP)`)
+- [x] **HCP Score vs. Course Score Header Toggle (`v1.3`)**:
+  - Tappable top score header (`#scoreModeToggleBtn`, desktop shortcut `M`) keeps the clean `Score: X (E / ±Y)` format and toggles between:
+    - **HCP Score (`net`):** `HCP SCORE` — `Score: 16 (-7)` (strokes + score relative to your Net/HCP par)
+    - **Course Score (`gross`):** `COURSE SCORE` — `Score: 16 (+1)` (strokes + score relative to the course's scratch par)
   - Persists preferred `scoreViewMode` in `localStorage`.
 - [x] **Decluttered Preset Play Screen (`v1.3`)**:
   - Automatically hides the redundant `EDIT PAR: Par 3 / Par 4 / Par 5` selector row (`#parEditRow`) whenever a recognized course preset (such as **Ljungbyheds GK (Par 71)** or a saved custom course) is active, giving that vertical space to the oversized `+1 STROKE` tap target.

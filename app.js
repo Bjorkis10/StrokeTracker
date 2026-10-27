@@ -17,11 +17,10 @@
   const DEFAULT_PAR = 4;
   const LONG_PRESS_MS = 1000;
 
-  // Score Display Modes (cycles on header tap):
-  // 'net'    -> Mode A (Net relative to HCP): e.g. "Net: E" or "Net: +2"
-  // 'gross'  -> Mode B (Gross / Scratch): e.g. "Gross: 54 (+19)"
-  // 'points' -> Mode C (Stableford Points): e.g. "Points: 18p"
-  const SCORE_MODES = ['net', 'gross', 'points'];
+  // Score Display Modes (toggles on header tap):
+  // 'net'   -> HCP Score:    "Score: 16 (-7)"
+  // 'gross' -> Course Score: "Score: 16 (+1)"
+  const SCORE_MODES = ['net', 'gross'];
 
   // Official Course Presets:
   // 1. Ljungbyheds GK (Par 71) with official Pars and Stroke Indexes (SI)
@@ -448,30 +447,26 @@
   }
 
   function getGolfTerm(strokes, par, netPar) {
+    const targetPar = state.scoreViewMode === 'net' ? netPar : par;
     if (strokes === 0) {
       return {
-        label: `Par ${par} (Net ${netPar}) • Tap +1`,
+        label: 'Tap to start hole',
         tone: 'neutral',
       };
     }
-
-    const pts = calculateStablefordPoints(strokes, netPar);
     if (strokes === 1) {
-      return { label: `Hole in One! • ${pts}p`, tone: 'under' };
+      return { label: `Hole in One! (-${targetPar - 1})`, tone: 'under' };
     }
 
-    const diff = strokes - par;
-    const netDiff = strokes - netPar;
-    const netStr = `Net ${formatDiff(netDiff, true)} (${pts}p)`;
-
-    if (diff <= -3) return { label: `Albatross (${diff}) • ${netStr}`, tone: 'under' };
-    if (diff === -2) return { label: `Eagle (-2) • ${netStr}`, tone: 'under' };
-    if (diff === -1) return { label: `Birdie (-1) • ${netStr}`, tone: 'under' };
-    if (diff === 0) return { label: `Even Par (E) • ${netStr}`, tone: 'par' };
-    if (diff === 1) return { label: `Bogey (+1) • ${netStr}`, tone: 'over' };
-    if (diff === 2) return { label: `Double Bogey (+2) • ${netStr}`, tone: 'over' };
-    if (diff === 3) return { label: `Triple Bogey (+3) • ${netStr}`, tone: 'over' };
-    return { label: `+${diff} Over Par • ${netStr}`, tone: 'over' };
+    const diff = strokes - targetPar;
+    if (diff <= -3) return { label: `Albatross (${diff})`, tone: 'under' };
+    if (diff === -2) return { label: 'Eagle (-2)', tone: 'under' };
+    if (diff === -1) return { label: 'Birdie (-1)', tone: 'under' };
+    if (diff === 0) return { label: 'Even Par (E)', tone: 'par' };
+    if (diff === 1) return { label: 'Bogey (+1)', tone: 'over' };
+    if (diff === 2) return { label: 'Double Bogey (+2)', tone: 'over' };
+    if (diff === 3) return { label: 'Triple Bogey (+3)', tone: 'over' };
+    return { label: `+${diff} Over Par`, tone: 'over' };
   }
 
   function computeRangeStats(holeSlice) {
@@ -598,26 +593,22 @@
     populateCourseDropdown(courseSelect, activeCourse.id);
     headerHcpBadge.textContent = `Spelhcp: ${state.spelhcp}`;
 
-    // 2. Update Tappable Score Header (Net / Gross / Stableford + Blind Mode)
+    // 2. Update Tappable Score Header (HCP Score vs Course Score + Blind Mode)
     const { total } = computeRoundBreakdown();
-    const devSuffix = IS_DEV ? ' • DEV' : '';
     hideScoreBtn.setAttribute('aria-pressed', String(state.hideScore));
 
     if (state.hideScore) {
+      topScoreLabel.textContent = 'SCORE HIDDEN';
       totalScoreDisplay.textContent = 'Score: •••';
       hideScoreIcon.textContent = '🙈';
-      topScoreLabel.textContent = `FOCUS MODE • HIDDEN${devSuffix}`;
     } else {
       hideScoreIcon.textContent = '👁';
       if (state.scoreViewMode === 'net') {
-        topScoreLabel.textContent = `VIEW: NET vs HCP (TAP)${devSuffix}`;
-        totalScoreDisplay.textContent = `Net: ${total.netDiffFormatted}`;
-      } else if (state.scoreViewMode === 'gross') {
-        topScoreLabel.textContent = `VIEW: GROSS / SCRATCH (TAP)${devSuffix}`;
-        totalScoreDisplay.textContent = `Gross: ${total.strokes} (${total.diffFormatted})`;
+        topScoreLabel.textContent = 'HCP SCORE';
+        totalScoreDisplay.textContent = `Score: ${total.strokes} (${total.netDiffFormatted})`;
       } else {
-        topScoreLabel.textContent = `VIEW: STABLEFORD (TAP)${devSuffix}`;
-        totalScoreDisplay.textContent = `Points: ${total.points}p`;
+        topScoreLabel.textContent = 'COURSE SCORE';
+        totalScoreDisplay.textContent = `Score: ${total.strokes} (${total.diffFormatted})`;
       }
     }
 
