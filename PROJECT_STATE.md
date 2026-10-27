@@ -1,6 +1,6 @@
 # StrokeTracker — Project State & Memory Bank
 
-> **Status:** Version 1.1 Complete (Deployed to Dev Preview; Ready for Production)
+> **Status:** Version 1.2 Complete (Ljungbyheds GK, WHS Handicap, Extra Strokes & Focus Mode)
 > **Production App URL (`origin`):** https://bjorkis10.github.io/StrokeTracker/
 > **Dev Preview App URL (`dev`):** https://bjorkis10.github.io/StrokeTracker-dev/
 > **GitHub Repositories:** [Production](https://github.com/Bjorkis10/StrokeTracker) | [Dev Preview](https://github.com/Bjorkis10/StrokeTracker-dev)
@@ -8,72 +8,81 @@
 
 ---
 
-## 1. Current Features Implemented (v1.1)
-- [x] **Course Selection & Custom Course Builder (`v1.1`)**:
-  - Header Course Selector dropdown (`#courseSelect`) and New Round Course Selector (`#newRoundCourseSelect`).
-  - Built-in 18-hole presets:
-    - `Generic Par 72` (Out 36 / In 36)
-    - `Course A — Championship Links (Par 72)` (Out 36 / In 36)
-    - `Course B — Parkland Pines (Par 71)` (Out 35 / In 36)
-    - `Course C — Executive Valley (Par 69)` (Out 34 / In 35)
-  - Interactive **Add / Edit Custom Course Modal** (`#courseModal`) allowing players to name a course, tap any of the 18 holes to cycle Par 3 / 4 / 5 with live Out/In/Total par calculation, and save/edit/delete custom courses in `localStorage` (`stroketracker_courses_v1`).
-- [x] **18-Hole Scorecard Modal (`v1.1`)**:
-  - Dedicated `View Scorecard` button in the bottom bar (plus desktop shortcut `S`).
-  - Displays summary cards for **Front 9 (OUT)**, **Back 9 (IN)**, and **Total (18)** showing strokes, relative-to-par (`+`, `-`, `E`), and section par.
-  - Full 18-hole table showing **Hole**, **Par**, **Strokes**, and color-coded **Score vs. Par** pills, including `OUT (1–9)`, `IN (10–18)`, and `TOTAL` subtotal rows. Tapping any hole row jumps directly to that hole.
-- [x] **Golf GameBook Summary Export (`v1.1`)**:
-  - `Copy Summary` button inside the Scorecard Modal that formats the round into a structured plain-text summary (Course name, Date, Total/Out/In scores, compact Front 9 & Back 9 strips, and hole-by-hole list) ready to reference when entering scores into **Golf GameBook**.
-- [x] **Offline-First Service Worker (`v1.1`)**:
-  - `sw.js` caches core application shell assets (`./`, `index.html`, `style.css`, `app.js`, `manifest.json`) using a cache-first + background network update strategy so the app loads reliably with zero mobile reception.
-- [x] **Universal PWA & Cross-Browser Installation (`v1.0`)**:
-  - Valid `manifest.json` (`display: standalone`, `theme_color: #000000`, `background_color: #000000`) and iOS Home Screen meta tags (`apple-mobile-web-app-capable`, `black-translucent`).
-  - Dynamic viewport units (`100dvh`) with `env(safe-area-inset-*)` notch/toolbar safety.
-- [x] **Screen Wake Lock API (`v1.0`)**:
-  - Automatic `'screen'` wake lock request with `visibilitychange` re-acquisition and interactive header badge (`Active`, `Inactive`, `Unsupported`).
-- [x] **Responsive OLED UI, Keyboard Controls & Haptic/Visual Feedback (`v1.0`)**:
-  - Pure `#000000` OLED theme, oversized `+1 STROKE` tap target, separated `Undo` button, `Space`/`+`, `-`/`Backspace`, `ArrowLeft`/`ArrowRight`, `S` (Scorecard) shortcuts, and `navigator.vibrate(50)` + `.tap-pulse` CSS animation.
+## 1. Current Features Implemented (v1.2)
+- [x] **Official Ljungbyheds GK (Par 71) & Course Presets (`v1.2`)**:
+  - **Ljungbyheds GK (Par 71)** set as default preset with official hole Pars and Stroke Indexes (SI 1–18).
+  - **Generic (Par 72)** fallback preset (SI 1–18 standard order) plus full support for user-created custom courses in `localStorage`.
+- [x] **Dual Handicap Setup — Manual or WHS Auto-Calculate (`v1.2`)**:
+  - Dedicated **Round & Handicap Setup** modal (`#setupModal`) accessible from the `Spelhcp: XX ⚙` button in the header bar.
+  - **Mode A (Manual Spelhcp):** Direct integer input (e.g., `38`).
+  - **Mode B (Auto WHS from Exact HCP & Tee):** Decimal Exact HCP input (e.g., `37.0`), Gender selector (`Herr` / `Dam`), and official Tee selector (`Gul`, `Blå`, `Röd`, `Orange`) with live WHS formula resolution (`Playing Handicap: 38 strokes`).
+- [x] **Extra Strokes per Hole & Net Par Display (`v1.2`)**:
+  - Automatically distributes `spelhcp` across all 18 holes based on each hole's Stroke Index (`SI`).
+  - Active hole view displays the **SI badge** (`SI 11`), calculated **Net Par** (`Par 3 (Net 5)`), and visual **extra strokes indicator** (`•• +2 strokes`).
+  - Quick-Jump 1–18 drawer and 18-hole Scorecard Modal also display extra strokes, SI, and Net Par alongside Gross scores.
+- [x] **"Focus / Hide Score" Mode — Blind Golf (`v1.2`)**:
+  - Eye toggle button (`#hideScoreBtn`, keyboard shortcut `H`) in the header bar masks the running cumulative total (`Score: •••`) so players can focus on one shot at a time without scoreboard pressure.
+  - Hole strokes are still recorded accurately, and the **Scorecard Modal** always reveals the full Gross and Net breakdown regardless of Focus Mode state.
+- [x] **Scorecard Modal, Golf GameBook Summary & Offline Service Worker (`v1.1`)**:
+  - 18-hole table with Front 9 (`OUT`), Back 9 (`IN`), and `TOTAL` subtotals, one-click `Copy Summary` formatted for **Golf GameBook**, and `sw.js` (`stroketracker-cache-v3`) for zero-signal offline reliability.
+- [x] **Universal PWA, Screen Wake Lock & Responsive OLED UI (`v1.0`)**:
+  - Pure `#000000` OLED design, `100dvh` + `env(safe-area-inset-*)` layout, automatic `navigator.wakeLock`, guarded `navigator.vibrate(50)` + `.tap-pulse` animation, and isolated Dev/Prod `localStorage` keys.
 
 ---
 
-## 2. Architecture & Tech Stack
-- **Core Stack:** Pure Vanilla HTML5, CSS3, and ES6+ JavaScript.
-- **Zero Build Dependencies:** No external frameworks, bundlers, or npm packages required.
+## 2. Course Data & WHS Handicap Formulas
+
+### Ljungbyheds GK (Par 71) Official Layout
+| Hole | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | **OUT** | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | **IN** | **TOT** |
+| :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| **Par** | 3 | 4 | 5 | 3 | 5 | 4 | 4 | 4 | 3 | **35** | 4 | 5 | 3 | 4 | 5 | 3 | 4 | 4 | 4 | **36** | **71** |
+| **SI** | 11 | 17 | 5 | 3 | 15 | 9 | 1 | 13 | 7 | — | 12 | 4 | 18 | 2 | 14 | 8 | 6 | 16 | 10 | — | — |
+
+### Tee Ratings (Slope & Course Rating)
+| Gender | Tee | Slope Rating | Course Rating (CR) |
+| :--- | :--- | :---: | :---: |
+| **Herr (Men)** | **Gul** | `122` | `69.3` |
+| **Herr (Men)** | **Blå** | `117` | `66.9` |
+| **Herr (Men)** | **Röd** | `114` | `65.4` |
+| **Dam (Women)** | **Gul** | `129` | `74.8` |
+| **Dam (Women)** | **Blå** | `123` | `71.8` |
+| **Dam (Women)** | **Röd** | `118` | `70.0` |
+| **Dam (Women)** | **Orange** | `106` | `64.2` |
+
+### Handicap Math Formulas
+1. **WHS Playing Handicap (`spelhcp`):**
+   $$\text{spelhcp} = \text{round}\!\left(\text{exactHcp} \times \frac{\text{slope}}{113} + (\text{CR} - \text{Par})\right)$$
+   ```js
+   spelhcp = Math.round(exactHcp * (slope / 113) + (cr - par));
+   ```
+2. **Extra Strokes Allocated per Hole:**
+   $$\text{extraStrokes} = \left\lfloor \frac{\text{spelhcp}}{18} \right\rfloor + \begin{cases} 1 & \text{if } (\text{spelhcp} \bmod 18) \ge \text{hole.si} \\ 0 & \text{otherwise} \end{cases}$$
+   ```js
+   extraStrokes = Math.floor(spelhcp / 18) + (spelhcp % 18 >= hole.si ? 1 : 0);
+   netPar = hole.par + extraStrokes;
+   ```
+
+---
+
+## 3. Architecture & Tech Stack
+- **Core Stack:** Pure Vanilla HTML5, CSS3, and ES6+ JavaScript (Zero build dependencies).
 - **Modular Files:**
-  - `index.html` — Semantic application layout, Course Selector header bar, Scorecard Modal, Custom Course Editor Modal, and New Round confirmation dialog.
-  - `style.css` — OLED black theme variables, `100dvh` + safe-area inset layout, desktop card frame, scorecard table & summary cards, and tactile micro-scale animations.
-  - `app.js` — State engine, `localStorage` sync (`stroketracker_state_v1` & `stroketracker_courses_v1`), Screen Wake Lock manager, scorecard calculator, Golf GameBook text exporter, and Service Worker registration.
-  - `sw.js` — Offline-first Service Worker for zero-signal reliability on remote courses.
-  - `manifest.json` — Standalone Web App Manifest with embedded vector icons.
+  - `index.html` — Semantic application layout, Focus Mode eye toggle, Net Par & Extra Strokes hole banner, Dual Handicap Setup Modal, Scorecard Modal, and Custom Course Editor Modal.
+  - `style.css` — OLED `#000000` theme, `100dvh` + safe-area inset layout, desktop phone-card frame, Net Par banner, WHS segmented controls, and scorecard table styles.
+  - `app.js` — State engine, `localStorage` persistence (`stroketracker_state_v1`, `stroketracker_courses_v1`, with automatic `stroketracker_dev_*` isolation on `-dev`), WHS Slope calculator, Screen Wake Lock manager, Golf GameBook exporter, and keyboard shortcuts.
+  - `sw.js` — Offline-first Service Worker (`stroketracker-cache-v3`).
+  - `manifest.json` — Standalone Web App Manifest.
 
 ---
 
-## 3. Cross-Platform Browser Support Matrix
-
-| Platform / Browser | Standalone PWA | Offline (`sw.js`) | Wake Lock API | Haptic Vibration | Dynamic Viewport (`100dvh`) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **iOS Safari (iPhone/iPad)** | Yes (Add to Home Screen) | Yes | Yes (iOS 16.4+) | No (CSS visual pulse fallback) | Yes |
-| **Android Chrome** | Yes (Install App) | Yes | Yes | Yes (`navigator.vibrate(50)`) | Yes |
-| **Desktop Chrome / Edge** | Yes (Installable PWA) | Yes | Yes | No (CSS visual pulse fallback) | Yes |
-| **Desktop Firefox** | Partial (Browser tab) | Yes | Yes (v126+) | No (CSS visual pulse fallback) | Yes |
-| **Desktop Safari (macOS)** | Yes (Add to Dock) | Yes | Yes | No (CSS visual pulse fallback) | Yes |
-
----
-
-## 4. Roadmap / Future Ideas
-- **v1.2 — Shot & Stat Breakdown:** Track putts per hole, Fairways in Regulation (FIR), Greens in Regulation (GIR), and penalty strokes.
-- **v1.3 — Course GPS Distance:** Geolocation API (`navigator.geolocation`) for distance to front/middle/back of green.
-- **v1.4 — Multi-Round History Archive:** Save completed rounds into a searchable round history log with CSV/JSON export.
-
----
-
-## 5. How to Run & Preview (GitHub Pages, PC & Mobile)
-
-### Option A: Live GitHub Pages (Recommended for Mobile & Course Use)
-- Open **`https://bjorkis10.github.io/StrokeTracker/`** on iPhone Safari, Android Chrome, or Desktop.
-- After loading once, `sw.js` caches the app so it opens even with zero mobile reception.
-
-### Option B: Local HTTP Server (For Local Development)
-```powershell
-python -m http.server 8080 --bind 0.0.0.0
-```
-Open **`http://localhost:8080`** on PC or `http://<YOUR_PC_IP>:8080` on mobile over LAN.
+## 4. Deployment & Preview Workflow
+- **Push to Dev Preview (`dev`):**
+  ```powershell
+  git push dev main
+  ```
+  Preview at: **`https://bjorkis10.github.io/StrokeTracker-dev/`**
+- **Publish to Production (`origin`):**
+  ```powershell
+  git push origin main
+  ```
+  Live at: **`https://bjorkis10.github.io/StrokeTracker/`**

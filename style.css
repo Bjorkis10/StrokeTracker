@@ -109,8 +109,8 @@ input:focus-visible {
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
-  padding-top: calc(var(--safe-top) + 10px);
-  padding-bottom: calc(var(--safe-bottom) + 12px);
+  padding-top: calc(var(--safe-top) + 8px);
+  padding-bottom: calc(var(--safe-bottom) + 10px);
   padding-left: calc(var(--safe-left) + 12px);
   padding-right: calc(var(--safe-right) + 12px);
 }
@@ -124,7 +124,7 @@ input:focus-visible {
 
   .app-shell {
     max-width: 430px;
-    height: min(880px, calc(100dvh - 36px));
+    height: min(890px, calc(100dvh - 36px));
     border-radius: 34px;
     border: 1.5px solid #22222a;
     box-shadow:
@@ -135,7 +135,7 @@ input:focus-visible {
 }
 
 /* ==========================================================================
-   Header: Total Cumulative Score, Wake Lock Badge & Course Selector Bar
+   Header: Total Cumulative Score, Hide Score Toggle, Wake Lock & Course Bar
    ========================================================================== */
 
 .top-header-group {
@@ -150,47 +150,81 @@ input:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 9px 12px;
+  padding: 8px 11px;
   background-color: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
+}
+
+.score-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .total-score-block {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 
 .top-label {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
 }
 
 .total-score-value {
-  font-size: 1.22rem;
+  font-size: 1.18rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eye-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.eye-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+.eye-toggle-btn[aria-pressed="true"] {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
 }
 
 .wakelock-badge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   padding: 7px 10px;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
   color: var(--text-secondary);
   transition: transform 0.12s ease, border-color 0.2s ease, background-color 0.2s ease;
-  max-width: 55%;
+  max-width: 50%;
 }
 
 .wakelock-badge:active {
@@ -238,7 +272,7 @@ input:focus-visible {
   background-color: var(--text-muted);
 }
 
-/* Course Selector Bar */
+/* Course & Handicap Quick-Bar */
 .course-bar {
   display: flex;
   align-items: center;
@@ -248,6 +282,7 @@ input:focus-visible {
 .course-select-wrapper {
   position: relative;
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   background-color: var(--surface-card);
@@ -268,9 +303,9 @@ input:focus-visible {
   height: 100%;
   background-color: transparent;
   color: var(--text-primary);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding-right: 10px;
+  padding-right: 8px;
   text-overflow: ellipsis;
 }
 
@@ -279,33 +314,37 @@ input:focus-visible {
   color: var(--text-primary);
 }
 
-.course-manage-btn {
+.hcp-setup-pill {
   height: 38px;
-  padding: 0 12px;
+  padding: 0 11px;
   border-radius: var(--radius-sm);
-  background-color: var(--surface-elevated);
-  border: 1px solid var(--surface-border);
+  background-color: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.45);
   font-size: 0.78rem;
   font-weight: 800;
   color: var(--accent-green-bright);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: transform 0.1s ease, background-color 0.15s ease;
 }
 
-.course-manage-btn:active {
+.hcp-setup-pill:active {
   transform: scale(0.95);
-  background-color: #1f1f26;
+  background-color: rgba(34, 197, 94, 0.22);
 }
 
 /* ==========================================================================
-   Hole Navigation & Editable Par Selector
+   Hole Navigation, SI Badge, Net Par Banner & Editable Par Selector
    ========================================================================== */
 
 .hole-panel {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   background-color: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
@@ -315,7 +354,7 @@ input:focus-visible {
 
 .hole-nav-row {
   display: grid;
-  grid-template-columns: 84px 1fr 84px;
+  grid-template-columns: 82px 1fr 82px;
   align-items: center;
   gap: 8px;
 }
@@ -329,7 +368,7 @@ input:focus-visible {
   border-radius: var(--radius-sm);
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
   transition: transform 0.1s ease, background-color 0.15s ease;
@@ -341,11 +380,12 @@ input:focus-visible {
 }
 
 .hole-title-btn {
-  display: inline-flex;
-  align-items: baseline;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 2px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
   background-color: transparent;
   transition: background-color 0.15s ease, transform 0.1s ease;
@@ -356,15 +396,21 @@ input:focus-visible {
   background-color: var(--surface-elevated);
 }
 
+.hole-title-main {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
 .hole-prefix {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   color: var(--text-secondary);
 }
 
 .hole-number {
-  font-size: 2.05rem;
+  font-size: 1.95rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-primary);
@@ -372,7 +418,63 @@ input:focus-visible {
 }
 
 .hole-caret {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+  color: var(--accent-green-bright);
+}
+
+.hole-si-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+
+/* Net Par & Extra Handicap Strokes Bar */
+.net-par-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background-color: #0e1712;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.net-par-title {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.extra-strokes-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  color: var(--accent-green-bright);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.extra-strokes-badge[data-extra="0"] {
+  background-color: var(--surface-elevated);
+  border-color: var(--surface-border);
+  color: var(--text-muted);
+}
+
+.extra-dots {
+  font-size: 1.05rem;
+  line-height: 1;
+  letter-spacing: 2px;
   color: var(--accent-green-bright);
 }
 
@@ -381,12 +483,12 @@ input:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-top: 6px;
+  padding-top: 5px;
   border-top: 1px solid #19191f;
 }
 
 .par-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
@@ -400,11 +502,11 @@ input:focus-visible {
 }
 
 .par-pill {
-  min-width: 66px;
-  height: 34px;
-  padding: 0 11px;
+  min-width: 64px;
+  height: 32px;
+  padding: 0 10px;
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
@@ -433,7 +535,7 @@ input:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-secondary);
   margin-bottom: 6px;
@@ -455,7 +557,7 @@ input:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5px 2px;
+  padding: 4px 2px;
   border-radius: 8px;
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
@@ -477,13 +579,20 @@ input:focus-visible {
 }
 
 .hole-cell-num {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
+.hole-cell-dots {
+  font-size: 0.6rem;
+  line-height: 0.8;
+  color: var(--accent-green-bright);
+  min-height: 8px;
+}
+
 .hole-cell-score {
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -499,7 +608,7 @@ input:focus-visible {
 .primary-action-zone {
   flex: 1;
   display: flex;
-  min-height: 200px;
+  min-height: 185px;
 }
 
 .add-stroke-btn {
@@ -513,8 +622,8 @@ input:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 16px;
+  gap: 14px;
+  padding: 14px;
   position: relative;
   overflow: hidden;
   transition:
@@ -542,7 +651,7 @@ input:focus-visible {
 }
 
 .stroke-count {
-  font-size: clamp(4.4rem, 18vw, 6.4rem);
+  font-size: clamp(4.2rem, 17vw, 6.2rem);
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -559,7 +668,7 @@ input:focus-visible {
   display: inline-block;
   padding: 5px 14px;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -587,7 +696,7 @@ input:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 24px;
+  padding: 10px 24px;
   border-radius: 999px;
   background-color: var(--accent-green);
   color: #000000;
@@ -597,11 +706,11 @@ input:focus-visible {
 }
 
 .plus-icon {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
 }
 
 .cta-label {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 /* ==========================================================================
@@ -610,7 +719,7 @@ input:focus-visible {
 
 .bottom-controls {
   display: grid;
-  grid-template-columns: 1fr 1.35fr 1fr;
+  grid-template-columns: 1fr 1.25fr 1fr;
   gap: 8px;
   margin-top: 2px;
   flex-shrink: 0;
@@ -621,7 +730,7 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 50px;
+  height: 48px;
   padding: 0 8px;
   border-radius: var(--radius-md);
   background-color: var(--surface-card);
@@ -672,8 +781,8 @@ input:focus-visible {
 .keyboard-hints {
   display: none;
   justify-content: center;
-  gap: 12px;
-  font-size: 0.68rem;
+  gap: 10px;
+  font-size: 0.66rem;
   color: var(--text-muted);
   padding-top: 1px;
   flex-shrink: 0;
@@ -683,7 +792,7 @@ input:focus-visible {
   display: inline-block;
   padding: 1px 5px;
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: var(--text-secondary);
   background-color: var(--surface-elevated);
@@ -698,7 +807,7 @@ input:focus-visible {
 }
 
 /* ==========================================================================
-   Modals (Scorecard, Custom Course Editor, New Round Confirmation)
+   Modals (Setup, Scorecard, Custom Course Editor, New Round Confirmation)
    ========================================================================== */
 
 .modal-backdrop {
@@ -745,13 +854,13 @@ input:focus-visible {
 }
 
 .modal-title {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .modal-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--text-secondary);
   margin-top: 2px;
@@ -778,10 +887,25 @@ input:focus-visible {
   color: var(--text-secondary);
 }
 
+/* Round & Handicap Setup Modal */
+.setup-scroll-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .form-label {
@@ -789,6 +913,12 @@ input:focus-visible {
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
+}
+
+.text-link-btn {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--accent-green-bright);
 }
 
 .form-input,
@@ -800,8 +930,110 @@ input:focus-visible {
   background-color: var(--surface-elevated);
   border: 1px solid var(--surface-border);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background-color: var(--bg-oled);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.mode-tab {
+  height: 36px;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  transition: all 0.12s ease;
+}
+
+.mode-tab.active {
+  background-color: rgba(34, 197, 94, 0.2);
+  border: 1px solid var(--accent-green);
+  color: var(--text-primary);
+}
+
+.hcp-mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #09090c;
+  border: 1px solid #1e1e26;
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.hcp-mode-panel[hidden] {
+  display: none;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  height: 40px;
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.seg-btn {
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.seg-btn.active {
+  background-color: rgba(34, 197, 94, 0.22);
+  border: 1px solid var(--accent-green);
+  color: var(--text-primary);
+}
+
+.whs-formula-note {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.resolved-hcp-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.16) 0%, rgba(34, 197, 94, 0.06) 100%);
+  border: 1.5px solid var(--accent-green);
+}
+
+.resolved-hcp-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.resolved-hcp-value {
+  font-size: 1.08rem;
+  font-weight: 900;
+  color: var(--accent-green-bright);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Scorecard Summary Strip (Front 9 / Back 9 / Total) */
@@ -837,7 +1069,7 @@ input:focus-visible {
 }
 
 .summary-val {
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   font-weight: 900;
   color: var(--text-primary);
 }
@@ -847,7 +1079,7 @@ input:focus-visible {
 }
 
 .summary-sub {
-  font-size: 0.66rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -866,7 +1098,7 @@ input:focus-visible {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
 }
 
 .scorecard-table thead th {
@@ -874,18 +1106,18 @@ input:focus-visible {
   top: 0;
   background-color: #16161c;
   color: var(--text-secondary);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 8px 6px;
+  letter-spacing: 0.05em;
+  padding: 8px 5px;
   border-bottom: 1px solid var(--surface-border);
   text-align: center;
   z-index: 2;
 }
 
 .scorecard-table tbody td {
-  padding: 7px 6px;
+  padding: 7px 5px;
   text-align: center;
   border-bottom: 1px solid #16161c;
   font-weight: 700;
@@ -905,6 +1137,17 @@ input:focus-visible {
   background-color: rgba(34, 197, 94, 0.1);
 }
 
+.scorecard-si-cell {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.scorecard-net-sub {
+  color: var(--accent-green-bright);
+  font-size: 0.72rem;
+  margin-left: 2px;
+}
+
 .scorecard-subtotal-row {
   background-color: #131318;
   font-weight: 900;
@@ -914,7 +1157,7 @@ input:focus-visible {
 .scorecard-subtotal-row td {
   border-top: 1px solid var(--surface-border);
   border-bottom: 1px solid var(--surface-border);
-  padding: 8px 6px;
+  padding: 8px 5px;
 }
 
 .score-diff-pill {
@@ -922,7 +1165,7 @@ input:focus-visible {
   min-width: 34px;
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
 }
 

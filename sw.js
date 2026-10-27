@@ -3,7 +3,7 @@
  * Provides offline-first reliability for remote golf courses with zero signal.
  */
 
-const CACHE_NAME = 'stroketracker-cache-v2';
+const CACHE_NAME = 'stroketracker-cache-v3';
 const CORE_ASSETS = [
   './',
   './index.html',

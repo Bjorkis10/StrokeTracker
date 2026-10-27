@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="OLED-optimized cross-platform golf stroke tracker for iOS, Android, and Desktop." />
+  <meta name="description" content="OLED-optimized cross-platform golf stroke tracker with WHS Handicap & Ljungbyheds GK preset." />
 
   <!-- iOS / Apple PWA Standalone Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,17 +18,30 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%2322c55e' stroke-width='20'/%3E%3Cpath d='M236 128v220M236 128l116 54-116 54' fill='%2322c55e' stroke='%2322c55e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cellipse cx='256' cy='364' rx='72' ry='22' fill='none' stroke='%23ffffff' stroke-width='16'/%3E%3C/svg%3E" />
 
-  <title>StrokeTracker — Golf Score &amp; Stroke Counter</title>
+  <title>StrokeTracker — Golf Score &amp; Handicap Counter</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app-shell" id="appShell" aria-label="Golf Stroke Tracker">
-    <!-- Top Header: Cumulative Score, Wake Lock Status & Course Selector -->
+    <!-- Top Header: Cumulative Score, Focus/Blind Mode Toggle, Wake Lock & Setup Bar -->
     <header class="top-header-group">
       <div class="top-bar">
-        <div class="total-score-block" aria-live="polite">
-          <span class="top-label">ROUND SCORE</span>
-          <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
+        <div class="score-header-left">
+          <div class="total-score-block" aria-live="polite">
+            <span class="top-label" id="topScoreLabel">ROUND SCORE</span>
+            <div class="total-score-value" id="totalScoreDisplay">Score: 0 (E)</div>
+          </div>
+
+          <button
+            type="button"
+            id="hideScoreBtn"
+            class="eye-toggle-btn"
+            aria-pressed="false"
+            aria-label="Toggle Focus / Hide Score Mode"
+            title="Focus Mode: Hide or show cumulative score"
+          >
+            <span id="hideScoreIcon" aria-hidden="true">&#128065;</span>
+          </button>
         </div>
 
         <button
@@ -44,26 +57,27 @@
         </button>
       </div>
 
-      <!-- Course Selector Bar -->
+      <!-- Course & Handicap Quick-Bar -->
       <div class="course-bar">
-        <label for="courseSelect" class="sr-only">Select Golf Course</label>
         <div class="course-select-wrapper">
           <span class="course-icon" aria-hidden="true">&#9971;</span>
           <select id="courseSelect" class="course-select" aria-label="Select Golf Course"></select>
         </div>
+
         <button
           type="button"
-          id="manageCourseBtn"
-          class="course-manage-btn"
-          aria-label="Add or edit custom course"
-          title="Add or edit custom course"
+          id="openSetupBtn"
+          class="hcp-setup-pill"
+          aria-label="Open Course and Handicap Setup"
+          title="Configure Handicap, Tee &amp; Course Settings"
         >
-          + Custom
+          <span id="headerHcpBadge">Spelhcp: 38</span>
+          <span aria-hidden="true">&#9881;</span>
         </button>
       </div>
     </header>
 
-    <!-- Hole Navigation & Editable Par Controls -->
+    <!-- Hole Navigation, Net Par & Extra Strokes Info -->
     <section class="hole-panel" aria-label="Hole Navigation and Par Settings">
       <div class="hole-nav-row">
         <button
@@ -84,9 +98,12 @@
           aria-controls="holeJumpDrawer"
           title="Tap to jump to any hole (1–18)"
         >
-          <span class="hole-prefix">HOLE</span>
-          <span class="hole-number" id="currentHoleNumber">1</span>
-          <span class="hole-caret" aria-hidden="true">&#9662;</span>
+          <div class="hole-title-main">
+            <span class="hole-prefix">HOLE</span>
+            <span class="hole-number" id="currentHoleNumber">1</span>
+            <span class="hole-caret" aria-hidden="true">&#9662;</span>
+          </div>
+          <span class="hole-si-badge" id="currentHoleSiBadge">SI 11</span>
         </button>
 
         <button
@@ -100,9 +117,18 @@
         </button>
       </div>
 
-      <!-- Editable Par Selector (Default Par 4) -->
+      <!-- Net Par & Extra Handicap Strokes Bar -->
+      <div class="net-par-banner" aria-live="polite">
+        <div class="net-par-title" id="currentHoleNetParText">Par 3 (Net 5)</div>
+        <div class="extra-strokes-badge" id="currentHoleExtraStrokesBadge">
+          <span class="extra-dots" id="currentHoleExtraDots">&bull;&bull;</span>
+          <span class="extra-text" id="currentHoleExtraText">+2 strokes</span>
+        </div>
+      </div>
+
+      <!-- Editable Par Selector -->
       <div class="par-row" role="group" aria-label="Select Par for current hole">
-        <span class="par-label">HOLE PAR</span>
+        <span class="par-label">EDIT PAR</span>
         <div class="par-pills">
           <button type="button" class="par-pill" data-par="3">Par 3</button>
           <button type="button" class="par-pill active" data-par="4">Par 4</button>
@@ -114,7 +140,7 @@
       <div id="holeJumpDrawer" class="hole-jump-drawer" hidden>
         <div class="drawer-header">
           <span>Quick Jump (Holes 1–18)</span>
-          <span class="drawer-legend">Number = Hole &bull; Badge = Strokes</span>
+          <span class="drawer-legend">Dots = Extra Strokes &bull; Bottom = Score</span>
         </div>
         <div class="hole-grid" id="holeGrid" role="list"></div>
       </div>
@@ -158,7 +184,7 @@
         aria-label="View 18-hole Scorecard"
       >
         <span class="btn-symbol" aria-hidden="true">&#9776;</span>
-        <span>View Scorecard</span>
+        <span>Scorecard</span>
       </button>
 
       <button
@@ -178,10 +204,162 @@
       <span><kbd>-</kbd>/<kbd>Bksp</kbd> Undo</span>
       <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> Hole</span>
       <span><kbd>S</kbd> Scorecard</span>
+      <span><kbd>H</kbd> Hide Score</span>
     </aside>
 
     <!-- ======================================================================
-         Modal 1: 18-Hole Scorecard & Golf GameBook Summary Export
+         Modal 1: Round & Handicap Setup Modal (Course + Dual HCP Modes)
+         ====================================================================== -->
+    <div
+      id="setupModal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="setupModalTitle"
+      hidden
+    >
+      <div class="modal-card modal-card-large">
+        <div class="modal-header-row">
+          <div>
+            <h2 id="setupModalTitle" class="modal-title">Round &amp; Handicap Setup</h2>
+            <p class="modal-subtitle">Course, Tee &amp; Playing Handicap (Spelhcp)</p>
+          </div>
+          <button
+            type="button"
+            id="closeSetupIconBtn"
+            class="icon-close-btn"
+            aria-label="Close Setup"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="setup-scroll-body">
+          <!-- Course Selection -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <label for="setupCourseSelect" class="form-label">COURSE</label>
+              <button type="button" id="openCustomCourseFromSetupBtn" class="text-link-btn">
+                + Add / Edit Custom Course
+              </button>
+            </div>
+            <select id="setupCourseSelect" class="form-input modal-select"></select>
+          </div>
+
+          <!-- Dual Handicap Mode Tabs -->
+          <div class="form-group">
+            <span class="form-label">HANDICAP MODE</span>
+            <div class="mode-tabs" role="tablist" aria-label="Handicap Calculation Mode">
+              <button
+                type="button"
+                id="tabModeWhs"
+                class="mode-tab active"
+                data-mode="whs"
+                role="tab"
+                aria-selected="true"
+              >
+                Auto WHS (Exact HCP + Tee)
+              </button>
+              <button
+                type="button"
+                id="tabModeManual"
+                class="mode-tab"
+                data-mode="manual"
+                role="tab"
+                aria-selected="false"
+              >
+                Manual Spelhcp
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode B: Auto-Calculate from Exact HCP & Tee (WHS) -->
+          <div id="whsModePanel" class="hcp-mode-panel">
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="exactHcpInput" class="form-label">EXACT HCP</label>
+                <input
+                  type="number"
+                  id="exactHcpInput"
+                  class="form-input"
+                  step="0.1"
+                  min="-10"
+                  max="54"
+                  value="37.0"
+                  inputmode="decimal"
+                />
+              </div>
+
+              <div class="form-group">
+                <span class="form-label">GENDER</span>
+                <div class="segmented-control" role="group" aria-label="Select Gender">
+                  <button
+                    type="button"
+                    class="seg-btn active"
+                    data-gender="herr"
+                  >
+                    Herr
+                  </button>
+                  <button
+                    type="button"
+                    class="seg-btn"
+                    data-gender="dam"
+                  >
+                    Dam
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="teeSelect" class="form-label">TEE SELECTION (SLOPE / CR)</label>
+              <select id="teeSelect" class="form-input modal-select"></select>
+            </div>
+
+            <div class="whs-formula-note" id="whsFormulaBreakdown">
+              Formula: round(37.0 &times; (122 / 113) + (69.3 &minus; 71))
+            </div>
+          </div>
+
+          <!-- Mode A: Manual Spelhcp Input -->
+          <div id="manualModePanel" class="hcp-mode-panel" hidden>
+            <div class="form-group">
+              <label for="manualSpelhcpInput" class="form-label">MANUAL SPELHCP (STROKES)</label>
+              <input
+                type="number"
+                id="manualSpelhcpInput"
+                class="form-input"
+                step="1"
+                min="0"
+                max="72"
+                value="38"
+                inputmode="numeric"
+              />
+            </div>
+          </div>
+
+          <!-- Resolved Playing Handicap Preview Box -->
+          <div class="resolved-hcp-box" aria-live="polite">
+            <span class="resolved-hcp-label">RESOLVED PLAYING HANDICAP</span>
+            <strong class="resolved-hcp-value" id="resolvedSpelhcpPreview">
+              Playing Handicap: 38 strokes
+            </strong>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelSetupBtn" class="modal-btn cancel">
+            Cancel
+          </button>
+          <button type="button" id="saveSetupBtn" class="modal-btn primary-green">
+            Save &amp; Apply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         Modal 2: 18-Hole Scorecard & Golf GameBook Summary Export
          ====================================================================== -->
     <div
       id="scorecardModal"
@@ -195,7 +373,7 @@
         <div class="modal-header-row">
           <div>
             <h2 id="scorecardModalTitle" class="modal-title">Round Scorecard</h2>
-            <p id="scorecardCourseSubtitle" class="modal-subtitle">Generic Par 72</p>
+            <p id="scorecardCourseSubtitle" class="modal-subtitle">Ljungbyheds GK (Par 71)</p>
           </div>
           <button
             type="button"
@@ -212,7 +390,7 @@
           <div class="summary-box">
             <span class="summary-label">FRONT 9 (OUT)</span>
             <span class="summary-val" id="summaryFront9">0 (E)</span>
-            <span class="summary-sub" id="summaryFront9Par">Par 36</span>
+            <span class="summary-sub" id="summaryFront9Par">Par 35</span>
           </div>
           <div class="summary-box">
             <span class="summary-label">BACK 9 (IN)</span>
@@ -220,9 +398,9 @@
             <span class="summary-sub" id="summaryBack9Par">Par 36</span>
           </div>
           <div class="summary-box highlight">
-            <span class="summary-label">TOTAL</span>
+            <span class="summary-label">TOTAL (GROSS)</span>
             <span class="summary-val" id="summaryTotal">0 (E)</span>
-            <span class="summary-sub" id="summaryTotalPar">Par 72</span>
+            <span class="summary-sub" id="summaryTotalPar">Par 71</span>
           </div>
         </div>
 
@@ -232,9 +410,10 @@
             <thead>
               <tr>
                 <th scope="col">Hole</th>
-                <th scope="col">Par</th>
+                <th scope="col">SI</th>
+                <th scope="col">Par (Net)</th>
                 <th scope="col">Strokes</th>
-                <th scope="col">+ / &minus;</th>
+                <th scope="col">+/&minus;</th>
               </tr>
             </thead>
             <tbody id="scorecardTableBody"></tbody>
@@ -261,7 +440,7 @@
     </div>
 
     <!-- ======================================================================
-         Modal 2: Add / Edit Custom Course Modal
+         Modal 3: Add / Edit Custom Course Modal
          ====================================================================== -->
     <div
       id="courseModal"
@@ -293,7 +472,7 @@
             type="text"
             id="customCourseNameInput"
             class="form-input"
-            placeholder="e.g. Pinehurst No. 2"
+            placeholder="e.g. Home Club"
             maxlength="42"
             autocomplete="off"
           />
@@ -333,7 +512,7 @@
     </div>
 
     <!-- ======================================================================
-         Modal 3: Accessible Confirmation Modal for Reset / New Round
+         Modal 4: Accessible Confirmation Modal for Reset / New Round
          ====================================================================== -->
     <div
       id="confirmModal"
@@ -347,7 +526,7 @@
       <div class="modal-card">
         <h2 id="modalTitle" class="modal-title">Start New Round?</h2>
         <p id="modalDesc" class="modal-desc">
-          This will reset all 18 holes back to 0 strokes for the selected course.
+          This will reset all 18 holes back to 0 strokes while keeping your Handicap &amp; Tee settings.
         </p>
         <div class="form-group">
           <label for="newRoundCourseSelect" class="form-label">COURSE FOR NEW ROUND</label>

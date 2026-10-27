@@ -1,6 +1,6 @@
 /**
- * StrokeTracker — Cross-Platform Golf Stroke & Par Tracker (v1.1)
- * Pure Vanilla ES6+ | Zero Dependencies | Courses + Scorecard + Offline SW
+ * StrokeTracker — Cross-Platform Golf Stroke & Handicap Tracker (v1.2)
+ * Pure Vanilla ES6+ | Zero Dependencies | Ljungbyheds GK + WHS Slope + Blind Golf Mode
  */
 
 (() => {
@@ -16,41 +16,52 @@
   const TOTAL_HOLES = 18;
   const DEFAULT_PAR = 4;
 
-  // Built-in Course Presets (Generic Par 72 + 3 Local Course Presets)
+  // Official Course Presets:
+  // 1. Ljungbyheds GK (Par 71) with official Pars and Stroke Indexes (SI)
+  // 2. Generic (Par 72) fallback (SI 1-18 standard order)
   const PRESET_COURSES = [
     {
+      id: 'ljungbyheds-gk',
+      name: 'Ljungbyheds GK (Par 71)',
+      isCustom: false,
+      pars: [3, 4, 5, 3, 5, 4, 4, 4, 3, 4, 5, 3, 4, 5, 3, 4, 4, 4],
+      si: [11, 17, 5, 3, 15, 9, 1, 13, 7, 12, 4, 18, 2, 14, 8, 6, 16, 10],
+    },
+    {
       id: 'generic-72',
-      name: 'Generic Par 72',
+      name: 'Generic (Par 72)',
       isCustom: false,
       pars: [4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4],
-    },
-    {
-      id: 'course-a',
-      name: 'Course A — Championship Links (Par 72)',
-      isCustom: false,
-      pars: [4, 5, 3, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 5, 3, 4, 4],
-    },
-    {
-      id: 'course-b',
-      name: 'Course B — Parkland Pines (Par 71)',
-      isCustom: false,
-      pars: [4, 4, 3, 5, 4, 3, 4, 4, 4, 4, 5, 3, 4, 4, 3, 5, 4, 4],
-    },
-    {
-      id: 'course-c',
-      name: 'Course C — Executive Valley (Par 69)',
-      isCustom: false,
-      pars: [4, 3, 4, 5, 3, 4, 4, 3, 4, 4, 4, 3, 5, 3, 4, 4, 3, 5],
+      si: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
     },
   ];
 
+  // Official WHS Tee Slope & Course Rating (CR) Data
+  const TEE_OPTIONS = {
+    herr: [
+      { id: 'gul', label: 'Gul', slope: 122, cr: 69.3 },
+      { id: 'bla', label: 'Blå', slope: 117, cr: 66.9 },
+      { id: 'rod', label: 'Röd', slope: 114, cr: 65.4 },
+    ],
+    dam: [
+      { id: 'gul', label: 'Gul', slope: 129, cr: 74.8 },
+      { id: 'bla', label: 'Blå', slope: 123, cr: 71.8 },
+      { id: 'rod', label: 'Röd', slope: 118, cr: 70.0 },
+      { id: 'orange', label: 'Orange', slope: 106, cr: 64.2 },
+    ],
+  };
+
   // --- DOM Elements ---
+  const topScoreLabel = document.getElementById('topScoreLabel');
   const totalScoreDisplay = document.getElementById('totalScoreDisplay');
+  const hideScoreBtn = document.getElementById('hideScoreBtn');
+  const hideScoreIcon = document.getElementById('hideScoreIcon');
   const wakeLockBtn = document.getElementById('wakeLockBtn');
   const wakeLockText = document.getElementById('wakeLockText');
 
   const courseSelect = document.getElementById('courseSelect');
-  const manageCourseBtn = document.getElementById('manageCourseBtn');
+  const openSetupBtn = document.getElementById('openSetupBtn');
+  const headerHcpBadge = document.getElementById('headerHcpBadge');
 
   const prevHoleBtn = document.getElementById('prevHoleBtn');
   const nextHoleBtn = document.getElementById('nextHoleBtn');
@@ -58,6 +69,11 @@
   const holeJumpDrawer = document.getElementById('holeJumpDrawer');
   const holeGrid = document.getElementById('holeGrid');
   const currentHoleNumber = document.getElementById('currentHoleNumber');
+  const currentHoleSiBadge = document.getElementById('currentHoleSiBadge');
+  const currentHoleNetParText = document.getElementById('currentHoleNetParText');
+  const currentHoleExtraStrokesBadge = document.getElementById('currentHoleExtraStrokesBadge');
+  const currentHoleExtraDots = document.getElementById('currentHoleExtraDots');
+  const currentHoleExtraText = document.getElementById('currentHoleExtraText');
   const parPills = document.querySelectorAll('.par-pill');
 
   const addStrokeBtn = document.getElementById('addStrokeBtn');
@@ -67,6 +83,24 @@
   const undoStrokeBtn = document.getElementById('undoStrokeBtn');
   const viewScorecardBtn = document.getElementById('viewScorecardBtn');
   const resetRoundBtn = document.getElementById('resetRoundBtn');
+
+  // Round & Handicap Setup Modal Elements
+  const setupModal = document.getElementById('setupModal');
+  const closeSetupIconBtn = document.getElementById('closeSetupIconBtn');
+  const setupCourseSelect = document.getElementById('setupCourseSelect');
+  const openCustomCourseFromSetupBtn = document.getElementById('openCustomCourseFromSetupBtn');
+  const tabModeWhs = document.getElementById('tabModeWhs');
+  const tabModeManual = document.getElementById('tabModeManual');
+  const whsModePanel = document.getElementById('whsModePanel');
+  const manualModePanel = document.getElementById('manualModePanel');
+  const exactHcpInput = document.getElementById('exactHcpInput');
+  const genderButtons = document.querySelectorAll('.seg-btn[data-gender]');
+  const teeSelect = document.getElementById('teeSelect');
+  const whsFormulaBreakdown = document.getElementById('whsFormulaBreakdown');
+  const manualSpelhcpInput = document.getElementById('manualSpelhcpInput');
+  const resolvedSpelhcpPreview = document.getElementById('resolvedSpelhcpPreview');
+  const cancelSetupBtn = document.getElementById('cancelSetupBtn');
+  const saveSetupBtn = document.getElementById('saveSetupBtn');
 
   // Scorecard Modal Elements
   const scorecardModal = document.getElementById('scorecardModal');
@@ -102,6 +136,10 @@
   // --- Application State ---
   let customCourses = loadCustomCourses();
   let state = loadState();
+
+  // Draft state for Round & Handicap Setup Modal
+  let draftSetup = null;
+  // Draft state for Custom Course Modal
   let editingCourseId = null;
   let draftCoursePars = [];
 
@@ -114,7 +152,7 @@
     typeof navigator.wakeLock.request === 'function';
 
   // ==========================================================================
-  // 1. Course Presets & Custom Course Persistence (localStorage)
+  // 1. Course Presets, Custom Courses & WHS Math Helpers
   // ==========================================================================
 
   function sanitizeParsArray(pars) {
@@ -122,6 +160,16 @@
       return PRESET_COURSES[0].pars.slice();
     }
     return pars.map((p) => ([3, 4, 5].includes(Number(p)) ? Number(p) : DEFAULT_PAR));
+  }
+
+  function sanitizeSiArray(si) {
+    if (!Array.isArray(si) || si.length !== TOTAL_HOLES) {
+      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+    }
+    return si.map((s, idx) => {
+      const n = Number(s);
+      return n >= 1 && n <= 18 ? Math.floor(n) : idx + 1;
+    });
   }
 
   function loadCustomCourses() {
@@ -137,6 +185,7 @@
           name: c.name.trim().slice(0, 42) || 'Custom Course',
           isCustom: true,
           pars: sanitizeParsArray(c.pars),
+          si: sanitizeSiArray(c.si),
         }));
     } catch (err) {
       console.warn('StrokeTracker: Could not read custom courses.', err);
@@ -161,23 +210,77 @@
     return all.find((c) => c.id === courseId) || PRESET_COURSES[0];
   }
 
+  function getTeeObject(gender, teeId) {
+    const g = gender === 'dam' ? 'dam' : 'herr';
+    const list = TEE_OPTIONS[g];
+    return list.find((t) => t.id === teeId) || list[0];
+  }
+
+  /**
+   * WHS Playing Handicap Formula:
+   * spelhcp = Math.round(exactHcp * (slope / 113) + (cr - par))
+   */
+  function calculateWhsSpelhcp(exactHcp, slope, cr, coursePar) {
+    const raw = Number(exactHcp) * (Number(slope) / 113) + (Number(cr) - Number(coursePar));
+    return Math.max(0, Math.round(raw));
+  }
+
+  /**
+   * Extra Strokes per Hole Formula:
+   * extraStrokes = Math.floor(spelhcp / 18) + (spelhcp % 18 >= hole.si ? 1 : 0)
+   */
+  function getExtraStrokesForHole(spelhcp, holeSi) {
+    const safeHcp = Math.max(0, Math.floor(Number(spelhcp) || 0));
+    const safeSi = Math.max(1, Math.min(18, Math.floor(Number(holeSi) || 18)));
+    return Math.floor(safeHcp / 18) + (safeHcp % 18 >= safeSi ? 1 : 0);
+  }
+
   // ==========================================================================
   // 2. Round State Management & Persistence (localStorage)
   // ==========================================================================
 
-  function createDefaultState(courseId = 'generic-72') {
+  function createDefaultState(courseId = 'ljungbyheds-gk') {
     const course = getCourseById(courseId);
+    const totalPar = course.pars.reduce((a, b) => a + b, 0);
+    const defaultGender = 'herr';
+    const defaultTee = getTeeObject(defaultGender, 'gul');
+    const defaultExactHcp = 37.0;
+    const defaultSpelhcp = calculateWhsSpelhcp(
+      defaultExactHcp,
+      defaultTee.slope,
+      defaultTee.cr,
+      totalPar
+    );
+
     const holes = course.pars.map((parVal, idx) => ({
       hole: idx + 1,
       par: parVal,
+      si: course.si[idx],
       strokes: 0,
     }));
+
     return {
       selectedCourseId: course.id,
       currentHole: 1,
+      hcpMode: 'whs', // 'whs' | 'manual'
+      gender: defaultGender, // 'herr' | 'dam'
+      teeId: defaultTee.id, // 'gul' | 'bla' | 'rod' | 'orange'
+      exactHcp: defaultExactHcp,
+      manualSpelhcp: defaultSpelhcp,
+      spelhcp: defaultSpelhcp,
+      hideScore: false,
       holes,
       updatedAt: Date.now(),
     };
+  }
+
+  function resolveCurrentSpelhcp(stateObj) {
+    const totalCoursePar = stateObj.holes.reduce((sum, h) => sum + h.par, 0);
+    if (stateObj.hcpMode === 'manual') {
+      return Math.max(0, Math.round(Number(stateObj.manualSpelhcp) || 0));
+    }
+    const tee = getTeeObject(stateObj.gender, stateObj.teeId);
+    return calculateWhsSpelhcp(stateObj.exactHcp, tee.slope, tee.cr, totalCoursePar);
   }
 
   function loadState() {
@@ -195,13 +298,25 @@
         return createDefaultState();
       }
 
-      const selectedCourse = getCourseById(parsed.selectedCourseId || 'generic-72');
+      const selectedCourse = getCourseById(parsed.selectedCourseId || 'ljungbyheds-gk');
+      const gender = parsed.gender === 'dam' ? 'dam' : 'herr';
+      const tee = getTeeObject(gender, parsed.teeId || 'gul');
+      const hcpMode = parsed.hcpMode === 'manual' ? 'manual' : 'whs';
+      const exactHcp =
+        typeof parsed.exactHcp === 'number' && !Number.isNaN(parsed.exactHcp)
+          ? parsed.exactHcp
+          : 37.0;
+      const manualSpelhcp =
+        typeof parsed.manualSpelhcp === 'number' && !Number.isNaN(parsed.manualSpelhcp)
+          ? Math.max(0, Math.round(parsed.manualSpelhcp))
+          : 38;
 
       const sanitizedHoles = parsed.holes.map((h, idx) => ({
         hole: idx + 1,
         par: [3, 4, 5].includes(Number(h.par))
           ? Number(h.par)
           : selectedCourse.pars[idx],
+        si: selectedCourse.si[idx],
         strokes: Math.max(0, Math.floor(Number(h.strokes) || 0)),
       }));
 
@@ -210,12 +325,22 @@
         Math.max(1, Math.floor(parsed.currentHole))
       );
 
-      return {
+      const loadedState = {
         selectedCourseId: selectedCourse.id,
         currentHole,
+        hcpMode,
+        gender,
+        teeId: tee.id,
+        exactHcp,
+        manualSpelhcp,
+        spelhcp: 38,
+        hideScore: Boolean(parsed.hideScore),
         holes: sanitizedHoles,
         updatedAt: parsed.updatedAt || Date.now(),
       };
+
+      loadedState.spelhcp = resolveCurrentSpelhcp(loadedState);
+      return loadedState;
     } catch (err) {
       console.warn('StrokeTracker: Could not read localStorage, using defaults.', err);
       return createDefaultState();
@@ -223,6 +348,7 @@
   }
 
   function saveState() {
+    state.spelhcp = resolveCurrentSpelhcp(state);
     state.updatedAt = Date.now();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -240,6 +366,7 @@
     state.selectedCourseId = course.id;
     state.holes.forEach((h, idx) => {
       h.par = course.pars[idx];
+      h.si = course.si[idx];
       if (resetStrokes) {
         h.strokes = 0;
       }
@@ -275,7 +402,7 @@
   }
 
   // ==========================================================================
-  // 4. Golf Scoring Calculations & UI Rendering
+  // 4. Golf Scoring, Extra Strokes & UI Rendering
   // ==========================================================================
 
   function formatDiff(diff, hasPlayedHoles = true) {
@@ -290,50 +417,69 @@
     return 'over';
   }
 
-  function getGolfTerm(strokes, par) {
+  function getGolfTerm(strokes, par, netPar) {
     if (strokes === 0) {
-      return { label: `Par ${par} • Tap +1 to start`, tone: 'neutral' };
+      return {
+        label: `Par ${par} (Net ${netPar}) • Tap +1`,
+        tone: 'neutral',
+      };
     }
     if (strokes === 1) {
       return { label: `Hole in One! (-${par - 1})`, tone: 'under' };
     }
 
     const diff = strokes - par;
-    if (diff <= -3) return { label: `Albatross (${diff})`, tone: 'under' };
-    if (diff === -2) return { label: 'Eagle (-2)', tone: 'under' };
-    if (diff === -1) return { label: 'Birdie (-1)', tone: 'under' };
-    if (diff === 0) return { label: 'Even Par (E)', tone: 'par' };
-    if (diff === 1) return { label: 'Bogey (+1)', tone: 'over' };
-    if (diff === 2) return { label: 'Double Bogey (+2)', tone: 'over' };
-    if (diff === 3) return { label: 'Triple Bogey (+3)', tone: 'over' };
-    return { label: `+${diff} Over Par`, tone: 'over' };
+    const netDiff = strokes - netPar;
+    const netStr = `Net ${formatDiff(netDiff, true)}`;
+
+    if (diff <= -3) return { label: `Albatross (${diff}) • ${netStr}`, tone: 'under' };
+    if (diff === -2) return { label: `Eagle (-2) • ${netStr}`, tone: 'under' };
+    if (diff === -1) return { label: `Birdie (-1) • ${netStr}`, tone: 'under' };
+    if (diff === 0) return { label: `Even Par (E) • ${netStr}`, tone: 'par' };
+    if (diff === 1) return { label: `Bogey (+1) • ${netStr}`, tone: 'over' };
+    if (diff === 2) return { label: `Double Bogey (+2) • ${netStr}`, tone: 'over' };
+    if (diff === 3) return { label: `Triple Bogey (+3) • ${netStr}`, tone: 'over' };
+    return { label: `+${diff} Over Par • ${netStr}`, tone: 'over' };
   }
 
   function computeRangeStats(holeSlice) {
     let strokes = 0;
     let playedPar = 0;
+    let playedNetPar = 0;
     let totalPar = 0;
+    let totalNetPar = 0;
     let playedCount = 0;
 
     for (const h of holeSlice) {
+      const extra = getExtraStrokesForHole(state.spelhcp, h.si);
+      const holeNetPar = h.par + extra;
       totalPar += h.par;
+      totalNetPar += holeNetPar;
+
       if (h.strokes > 0) {
         strokes += h.strokes;
         playedPar += h.par;
+        playedNetPar += holeNetPar;
         playedCount += 1;
       }
     }
 
     const diff = strokes - playedPar;
+    const netDiff = strokes - playedNetPar;
     const diffFormatted = formatDiff(diff, playedCount > 0);
+    const netDiffFormatted = formatDiff(netDiff, playedCount > 0);
 
     return {
       strokes,
       playedPar,
+      playedNetPar,
       totalPar,
+      totalNetPar,
       playedCount,
       diff,
+      netDiff,
       diffFormatted,
+      netDiffFormatted,
     };
   }
 
@@ -365,6 +511,9 @@
   function renderQuickJumpGrid() {
     holeGrid.innerHTML = '';
     state.holes.forEach((holeObj) => {
+      const extra = getExtraStrokesForHole(state.spelhcp, holeObj.si);
+      const dotsStr = extra > 0 ? '•'.repeat(Math.min(extra, 4)) : '';
+
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'hole-cell';
@@ -376,12 +525,16 @@
       }
       btn.setAttribute(
         'aria-label',
-        `Jump to Hole ${holeObj.hole}, Par ${holeObj.par}, Strokes ${holeObj.strokes}`
+        `Jump to Hole ${holeObj.hole}, Par ${holeObj.par}, Net Par ${holeObj.par + extra}, Strokes ${holeObj.strokes}`
       );
 
       const numSpan = document.createElement('span');
       numSpan.className = 'hole-cell-num';
       numSpan.textContent = holeObj.hole;
+
+      const dotsSpan = document.createElement('span');
+      dotsSpan.className = 'hole-cell-dots';
+      dotsSpan.textContent = dotsStr;
 
       const scoreSpan = document.createElement('span');
       scoreSpan.className = 'hole-cell-score';
@@ -389,6 +542,7 @@
         holeObj.strokes > 0 ? `${holeObj.strokes}` : `P${holeObj.par}`;
 
       btn.appendChild(numSpan);
+      btn.appendChild(dotsSpan);
       btn.appendChild(scoreSpan);
 
       btn.addEventListener('click', () => {
@@ -405,16 +559,47 @@
     const active = getActiveHoleData();
     const activeCourse = getCourseById(state.selectedCourseId);
 
-    // 1. Update Course Dropdown & Custom Course Button Label
+    // 1. Update Course Dropdown & Spelhcp Setup Pill
     populateCourseDropdown(courseSelect, activeCourse.id);
-    manageCourseBtn.textContent = activeCourse.isCustom ? 'Edit Course' : '+ Custom';
+    headerHcpBadge.textContent = `Spelhcp: ${state.spelhcp}`;
 
-    // 2. Update Cumulative Score Header (e.g., "Score: 42 (+2)")
+    // 2. Update Cumulative Score Header (with Focus / Blind Mode support)
     const { total } = computeRoundBreakdown();
-    totalScoreDisplay.textContent = `Score: ${total.strokes} (${total.diffFormatted})`;
+    hideScoreBtn.setAttribute('aria-pressed', String(state.hideScore));
+    if (state.hideScore) {
+      totalScoreDisplay.textContent = 'Score: •••';
+      hideScoreIcon.textContent = '🙈';
+      topScoreLabel.textContent = IS_DEV
+        ? 'FOCUS MODE • DEV'
+        : 'ROUND SCORE (HIDDEN)';
+    } else {
+      totalScoreDisplay.textContent = `Score: ${total.strokes} (${total.diffFormatted})`;
+      hideScoreIcon.textContent = '👁';
+      topScoreLabel.textContent = IS_DEV
+        ? 'ROUND SCORE • DEV PREVIEW'
+        : 'ROUND SCORE';
+    }
 
-    // 3. Update Hole Number & Par Selector Pills
+    // 3. Update Hole Number, SI Badge, Extra Strokes & Net Par Banner
+    const extraStrokes = getExtraStrokesForHole(state.spelhcp, active.si);
+    const netPar = active.par + extraStrokes;
+
     currentHoleNumber.textContent = String(active.hole);
+    currentHoleSiBadge.textContent = `SI ${active.si}`;
+    currentHoleNetParText.textContent = `Par ${active.par} (Net ${netPar})`;
+
+    currentHoleExtraStrokesBadge.setAttribute('data-extra', String(extraStrokes));
+    if (extraStrokes > 0) {
+      currentHoleExtraDots.textContent = '•'.repeat(extraStrokes);
+      currentHoleExtraText.textContent = `+${extraStrokes} ${
+        extraStrokes === 1 ? 'stroke' : 'strokes'
+      }`;
+    } else {
+      currentHoleExtraDots.textContent = '';
+      currentHoleExtraText.textContent = '0 extra strokes';
+    }
+
+    // 4. Update Par Selector Pills
     parPills.forEach((pill) => {
       const pillPar = Number(pill.dataset.par);
       const isActive = pillPar === active.par;
@@ -422,26 +607,147 @@
       pill.setAttribute('aria-pressed', String(isActive));
     });
 
-    // 4. Update Current Hole Strokes & Relative Term
+    // 5. Update Current Hole Strokes & Relative Term
     currentHoleStrokes.textContent = String(active.strokes);
-    const termInfo = getGolfTerm(active.strokes, active.par);
+    const termInfo = getGolfTerm(active.strokes, active.par, netPar);
     currentHoleTerm.textContent = termInfo.label;
     currentHoleTerm.setAttribute('data-tone', termInfo.tone);
 
-    // 5. Update Undo Button Disabled State
+    // 6. Update Undo Button Disabled State
     undoStrokeBtn.disabled = active.strokes <= 0;
 
-    // 6. Refresh Quick-Jump 1–18 Grid
+    // 7. Refresh Quick-Jump 1–18 Grid
     renderQuickJumpGrid();
 
-    // 7. If Scorecard Modal is open, keep it synced
+    // 8. If Scorecard Modal is open, keep it synced
     if (!scorecardModal.hidden) {
       renderScorecardModal();
     }
   }
 
   // ==========================================================================
-  // 5. Scorecard Modal & Golf GameBook Summary Export
+  // 5. Focus / Hide Score Mode (Blind Golf)
+  // ==========================================================================
+
+  function toggleHideScoreMode() {
+    triggerFeedback(hideScoreBtn);
+    state.hideScore = !state.hideScore;
+    saveState();
+    render();
+  }
+
+  // ==========================================================================
+  // 6. Dual Handicap & Round Setup Modal
+  // ==========================================================================
+
+  function populateSetupTeeDropdown(gender, selectedTeeId) {
+    const g = gender === 'dam' ? 'dam' : 'herr';
+    const tees = TEE_OPTIONS[g];
+    teeSelect.innerHTML = '';
+
+    tees.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.label} (Slope ${t.slope}, CR ${t.cr.toFixed(1)})`;
+      if (t.id === selectedTeeId) {
+        opt.selected = true;
+      }
+      teeSelect.appendChild(opt);
+    });
+  }
+
+  function updateSetupModalPreview() {
+    if (!draftSetup) return;
+
+    const selectedCourse = getCourseById(draftSetup.courseId);
+    const coursePar = selectedCourse.pars.reduce((a, b) => a + b, 0);
+
+    // Toggle Mode Tabs
+    const isWhs = draftSetup.hcpMode === 'whs';
+    tabModeWhs.classList.toggle('active', isWhs);
+    tabModeWhs.setAttribute('aria-selected', String(isWhs));
+    tabModeManual.classList.toggle('active', !isWhs);
+    tabModeManual.setAttribute('aria-selected', String(!isWhs));
+
+    whsModePanel.hidden = !isWhs;
+    manualModePanel.hidden = isWhs;
+
+    // Update Gender Segmented Control
+    genderButtons.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.gender === draftSetup.gender);
+    });
+
+    let resolvedSpelhcp = 0;
+    if (isWhs) {
+      const tee = getTeeObject(draftSetup.gender, draftSetup.teeId);
+      resolvedSpelhcp = calculateWhsSpelhcp(
+        draftSetup.exactHcp,
+        tee.slope,
+        tee.cr,
+        coursePar
+      );
+      whsFormulaBreakdown.textContent = `Formula: round(${draftSetup.exactHcp.toFixed(
+        1
+      )} × (${tee.slope} / 113) + (${tee.cr.toFixed(1)} − ${coursePar})) = ${resolvedSpelhcp}`;
+    } else {
+      resolvedSpelhcp = Math.max(0, Math.round(Number(draftSetup.manualSpelhcp) || 0));
+    }
+
+    draftSetup.resolvedSpelhcp = resolvedSpelhcp;
+    resolvedSpelhcpPreview.textContent = `Playing Handicap: ${resolvedSpelhcp} ${
+      resolvedSpelhcp === 1 ? 'stroke' : 'strokes'
+    }`;
+  }
+
+  function openSetupModal() {
+    triggerFeedback(openSetupBtn);
+    draftSetup = {
+      courseId: state.selectedCourseId,
+      hcpMode: state.hcpMode,
+      gender: state.gender,
+      teeId: state.teeId,
+      exactHcp: state.exactHcp,
+      manualSpelhcp: state.manualSpelhcp,
+      resolvedSpelhcp: state.spelhcp,
+    };
+
+    populateCourseDropdown(setupCourseSelect, draftSetup.courseId);
+    populateSetupTeeDropdown(draftSetup.gender, draftSetup.teeId);
+    exactHcpInput.value = draftSetup.exactHcp.toFixed(1);
+    manualSpelhcpInput.value = String(draftSetup.manualSpelhcp);
+
+    updateSetupModalPreview();
+    setupModal.hidden = false;
+  }
+
+  function closeSetupModal() {
+    setupModal.hidden = true;
+    draftSetup = null;
+  }
+
+  function saveSetupFromModal() {
+    if (!draftSetup) return;
+    triggerFeedback(saveSetupBtn);
+
+    const courseChanged = draftSetup.courseId !== state.selectedCourseId;
+    state.hcpMode = draftSetup.hcpMode;
+    state.gender = draftSetup.gender;
+    state.teeId = draftSetup.teeId;
+    state.exactHcp = draftSetup.exactHcp;
+    state.manualSpelhcp = draftSetup.manualSpelhcp;
+
+    if (courseChanged) {
+      applyCourseSelection(draftSetup.courseId, false);
+    } else {
+      saveState();
+      render();
+    }
+
+    closeSetupModal();
+  }
+
+  // ==========================================================================
+  // 7. Scorecard Modal & Golf GameBook Summary Export
   // ==========================================================================
 
   function createSubtotalRow(label, stats) {
@@ -451,8 +757,11 @@
     const tdLabel = document.createElement('td');
     tdLabel.textContent = label;
 
+    const tdSi = document.createElement('td');
+    tdSi.textContent = '';
+
     const tdPar = document.createElement('td');
-    tdPar.textContent = String(stats.totalPar);
+    tdPar.innerHTML = `${stats.totalPar} <span class="scorecard-net-sub">(${stats.totalNetPar})</span>`;
 
     const tdStrokes = document.createElement('td');
     tdStrokes.textContent = stats.playedCount > 0 ? String(stats.strokes) : '—';
@@ -465,6 +774,7 @@
     tdDiff.appendChild(pill);
 
     tr.appendChild(tdLabel);
+    tr.appendChild(tdSi);
     tr.appendChild(tdPar);
     tr.appendChild(tdStrokes);
     tr.appendChild(tdDiff);
@@ -474,17 +784,23 @@
   function renderScorecardModal() {
     const activeCourse = getCourseById(state.selectedCourseId);
     const { front9, back9, total } = computeRoundBreakdown();
+    const tee = getTeeObject(state.gender, state.teeId);
+    const hcpDesc =
+      state.hcpMode === 'whs'
+        ? `Spelhcp ${state.spelhcp} (${state.gender === 'dam' ? 'Dam' : 'Herr'} ${tee.label}, HCP ${state.exactHcp.toFixed(1)})`
+        : `Spelhcp ${state.spelhcp} (Manual)`;
 
-    scorecardCourseSubtitle.textContent = `${activeCourse.name} • Par ${total.totalPar}`;
+    scorecardCourseSubtitle.textContent = `${activeCourse.name} • ${hcpDesc}`;
 
+    // The final scorecard always displays the full score regardless of Focus/Hide Score mode
     summaryFront9.textContent = `${front9.strokes} (${front9.diffFormatted})`;
-    summaryFront9Par.textContent = `Par ${front9.totalPar}`;
+    summaryFront9Par.textContent = `Par ${front9.totalPar} • Net ${front9.netDiffFormatted}`;
 
     summaryBack9.textContent = `${back9.strokes} (${back9.diffFormatted})`;
-    summaryBack9Par.textContent = `Par ${back9.totalPar}`;
+    summaryBack9Par.textContent = `Par ${back9.totalPar} • Net ${back9.netDiffFormatted}`;
 
     summaryTotal.textContent = `${total.strokes} (${total.diffFormatted})`;
-    summaryTotalPar.textContent = `Par ${total.totalPar}`;
+    summaryTotalPar.textContent = `Par ${total.totalPar} • Net ${total.netDiffFormatted}`;
 
     scorecardTableBody.innerHTML = '';
 
@@ -495,14 +811,20 @@
         tr.classList.add('is-active-hole');
       }
 
+      const extra = getExtraStrokesForHole(state.spelhcp, h.si);
+      const netPar = h.par + extra;
       const isPlayed = h.strokes > 0;
       const holeDiff = h.strokes - h.par;
 
       const tdHole = document.createElement('td');
       tdHole.textContent = `${h.hole}`;
 
+      const tdSi = document.createElement('td');
+      tdSi.className = 'scorecard-si-cell';
+      tdSi.textContent = `${h.si}`;
+
       const tdPar = document.createElement('td');
-      tdPar.textContent = `${h.par}`;
+      tdPar.innerHTML = `${h.par} <span class="scorecard-net-sub">(${netPar})</span>`;
 
       const tdStrokes = document.createElement('td');
       tdStrokes.textContent = isPlayed ? `${h.strokes}` : '—';
@@ -515,6 +837,7 @@
       tdDiff.appendChild(pill);
 
       tr.appendChild(tdHole);
+      tr.appendChild(tdSi);
       tr.appendChild(tdPar);
       tr.appendChild(tdStrokes);
       tr.appendChild(tdDiff);
@@ -527,11 +850,9 @@
 
       scorecardTableBody.appendChild(tr);
 
-      // Insert Front 9 (OUT) subtotal after Hole 9
       if (idx === 8) {
         scorecardTableBody.appendChild(createSubtotalRow('OUT (1–9)', front9));
       }
-      // Insert Back 9 (IN) and TOTAL subtotals after Hole 18
       if (idx === 17) {
         scorecardTableBody.appendChild(createSubtotalRow('IN (10–18)', back9));
         scorecardTableBody.appendChild(createSubtotalRow('TOTAL', total));
@@ -553,13 +874,20 @@
   function buildGameBookSummaryText() {
     const activeCourse = getCourseById(state.selectedCourseId);
     const { front9, back9, total } = computeRoundBreakdown();
+    const tee = getTeeObject(state.gender, state.teeId);
     const dateStr = new Date().toISOString().slice(0, 10);
 
     const lines = [
       `⛳ StrokeTracker — Golf GameBook Entry Summary`,
       `Course: ${activeCourse.name} (Par ${total.totalPar})`,
+      `Handicap: Spelhcp ${state.spelhcp} (${
+        state.hcpMode === 'whs'
+          ? `${state.gender === 'dam' ? 'Dam' : 'Herr'} ${tee.label}, Exact HCP ${state.exactHcp.toFixed(1)}`
+          : 'Manual'
+      })`,
       `Date: ${dateStr}`,
-      `Total Score: ${total.strokes} (${total.diffFormatted}) | Out: ${front9.strokes} (${front9.diffFormatted}) | In: ${back9.strokes} (${back9.diffFormatted})`,
+      `Gross Score: ${total.strokes} (${total.diffFormatted}) | Net vs Par: ${total.netDiffFormatted}`,
+      `Out (1-9): ${front9.strokes} (${front9.diffFormatted}) | In (10-18): ${back9.strokes} (${back9.diffFormatted})`,
       `----------------------------------------`,
       `FRONT 9 (OUT - Par ${front9.totalPar}):`,
     ];
@@ -578,13 +906,15 @@
     lines.push(back9Line);
 
     lines.push(`----------------------------------------`);
-    lines.push(`Hole-by-Hole (Hole | Par | Strokes | +/-):`);
+    lines.push(`Hole-by-Hole (Hole | SI | Par (Net) | Strokes | Gross +/-):`);
     state.holes.forEach((h) => {
+      const extra = getExtraStrokesForHole(state.spelhcp, h.si);
+      const netPar = h.par + extra;
       const isPlayed = h.strokes > 0;
       const diffStr = isPlayed ? formatDiff(h.strokes - h.par, true) : '-';
       const strokeStr = isPlayed ? String(h.strokes) : '-';
       lines.push(
-        `Hole ${String(h.hole).padStart(2, ' ')} | Par ${h.par} | Strokes: ${strokeStr} (${diffStr})`
+        `Hole ${String(h.hole).padStart(2, ' ')} | SI ${String(h.si).padStart(2, ' ')} | Par ${h.par} (Net ${netPar}) | Strokes: ${strokeStr} (${diffStr})`
       );
     });
 
@@ -630,7 +960,7 @@
   }
 
   // ==========================================================================
-  // 6. Custom Course Editor Modal
+  // 8. Custom Course Editor Modal
   // ==========================================================================
 
   function renderDraftCourseParGrid() {
@@ -660,7 +990,6 @@
 
       btn.addEventListener('click', () => {
         triggerFeedback(btn);
-        // Cycle 3 -> 4 -> 5 -> 3
         const nextPar = parVal === 3 ? 4 : parVal === 4 ? 5 : 3;
         draftCoursePars[idx] = nextPar;
         renderDraftCourseParGrid();
@@ -671,7 +1000,6 @@
   }
 
   function openCourseModal() {
-    triggerFeedback(manageCourseBtn);
     const activeCourse = getCourseById(state.selectedCourseId);
 
     if (activeCourse.isCustom) {
@@ -684,7 +1012,6 @@
       editingCourseId = null;
       courseModalTitle.textContent = 'Add Custom Course';
       customCourseNameInput.value = '';
-      // Seed with current round's hole pars so any inline edits carry over
       draftCoursePars = state.holes.map((h) => h.par);
       deleteCustomCourseBtn.hidden = true;
     }
@@ -703,6 +1030,7 @@
     const rawName = customCourseNameInput.value.trim();
     const courseName = rawName || `Custom Course ${customCourses.length + 1}`;
     const cleanPars = sanitizeParsArray(draftCoursePars);
+    const standardSi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
     let targetCourseId = editingCourseId;
 
@@ -719,6 +1047,7 @@
         name: courseName,
         isCustom: true,
         pars: cleanPars,
+        si: standardSi,
       });
     }
 
@@ -732,12 +1061,12 @@
     triggerFeedback(deleteCustomCourseBtn);
     customCourses = customCourses.filter((c) => c.id !== editingCourseId);
     saveCustomCourses();
-    applyCourseSelection('generic-72', false);
+    applyCourseSelection('ljungbyheds-gk', false);
     closeCourseModal();
   }
 
   // ==========================================================================
-  // 7. Core Gameplay Actions (Add Stroke, Undo, Par Edit, Navigation, Reset)
+  // 9. Core Gameplay Actions (Add Stroke, Undo, Par Edit, Navigation, Reset)
   // ==========================================================================
 
   function addStroke() {
@@ -762,7 +1091,6 @@
     const active = getActiveHoleData();
     active.par = newPar;
 
-    // If a custom course is currently selected, persist this hole's par update to that custom course
     const activeCourse = getCourseById(state.selectedCourseId);
     if (activeCourse.isCustom) {
       activeCourse.pars[state.currentHole - 1] = newPar;
@@ -809,7 +1137,7 @@
   }
 
   // ==========================================================================
-  // 8. Screen Wake Lock API Implementation (with Safe Fallbacks)
+  // 10. Screen Wake Lock API Implementation (with Safe Fallbacks)
   // ==========================================================================
 
   function updateWakeLockBadge(status) {
@@ -899,17 +1227,91 @@
   );
 
   // ==========================================================================
-  // 9. Event Listeners & Desktop Keyboard Shortcuts
+  // 11. Event Listeners & Desktop Keyboard Shortcuts
   // ==========================================================================
 
   addStrokeBtn.addEventListener('click', addStroke);
   undoStrokeBtn.addEventListener('click', undoStroke);
+  hideScoreBtn.addEventListener('click', toggleHideScoreMode);
 
   courseSelect.addEventListener('change', (e) => {
     applyCourseSelection(e.target.value, false);
   });
 
-  manageCourseBtn.addEventListener('click', openCourseModal);
+  // Round & Handicap Setup Modal Listeners
+  openSetupBtn.addEventListener('click', openSetupModal);
+  closeSetupIconBtn.addEventListener('click', closeSetupModal);
+  cancelSetupBtn.addEventListener('click', closeSetupModal);
+  saveSetupBtn.addEventListener('click', saveSetupFromModal);
+
+  setupModal.addEventListener('click', (e) => {
+    if (e.target === setupModal) closeSetupModal();
+  });
+
+  setupCourseSelect.addEventListener('change', (e) => {
+    if (!draftSetup) return;
+    draftSetup.courseId = e.target.value;
+    updateSetupModalPreview();
+  });
+
+  openCustomCourseFromSetupBtn.addEventListener('click', () => {
+    closeSetupModal();
+    openCourseModal();
+  });
+
+  tabModeWhs.addEventListener('click', () => {
+    if (!draftSetup) return;
+    triggerFeedback(tabModeWhs);
+    draftSetup.hcpMode = 'whs';
+    updateSetupModalPreview();
+  });
+
+  tabModeManual.addEventListener('click', () => {
+    if (!draftSetup) return;
+    triggerFeedback(tabModeManual);
+    draftSetup.hcpMode = 'manual';
+    updateSetupModalPreview();
+  });
+
+  exactHcpInput.addEventListener('input', (e) => {
+    if (!draftSetup) return;
+    const rawVal = String(e.target.value).replace(',', '.');
+    const parsed = parseFloat(rawVal);
+    if (!Number.isNaN(parsed)) {
+      draftSetup.exactHcp = Math.max(-10, Math.min(54, parsed));
+      updateSetupModalPreview();
+    }
+  });
+
+  genderButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!draftSetup) return;
+      triggerFeedback(btn);
+      const nextGender = btn.dataset.gender === 'dam' ? 'dam' : 'herr';
+      draftSetup.gender = nextGender;
+      const validTee = getTeeObject(nextGender, draftSetup.teeId);
+      draftSetup.teeId = validTee.id;
+      populateSetupTeeDropdown(nextGender, draftSetup.teeId);
+      updateSetupModalPreview();
+    });
+  });
+
+  teeSelect.addEventListener('change', (e) => {
+    if (!draftSetup) return;
+    draftSetup.teeId = e.target.value;
+    updateSetupModalPreview();
+  });
+
+  manualSpelhcpInput.addEventListener('input', (e) => {
+    if (!draftSetup) return;
+    const parsed = parseInt(e.target.value, 10);
+    if (!Number.isNaN(parsed)) {
+      draftSetup.manualSpelhcp = Math.max(0, Math.min(72, parsed));
+      updateSetupModalPreview();
+    }
+  });
+
+  // Custom Course Modal Listeners
   closeCourseModalIconBtn.addEventListener('click', closeCourseModal);
   cancelCourseModalBtn.addEventListener('click', closeCourseModal);
   saveCourseModalBtn.addEventListener('click', saveCustomCourseFromModal);
@@ -919,6 +1321,7 @@
     if (e.target === courseModal) closeCourseModal();
   });
 
+  // Scorecard Modal Listeners
   viewScorecardBtn.addEventListener('click', openScorecardModal);
   closeScorecardBtn.addEventListener('click', closeScorecardModal);
   closeScorecardIconBtn.addEventListener('click', closeScorecardModal);
@@ -928,6 +1331,7 @@
     if (e.target === scorecardModal) closeScorecardModal();
   });
 
+  // Hole Navigation & Par Listeners
   prevHoleBtn.addEventListener('click', () => {
     triggerFeedback(prevHoleBtn);
     selectHole(state.currentHole - 1);
@@ -964,27 +1368,34 @@
   // Space or + : Add stroke
   // - or Backspace : Undo stroke
   // ArrowRight / ArrowLeft : Next / Previous hole
-  // S : Toggle Scorecard Modal
+  // S : Open Scorecard Modal
+  // H : Toggle Focus / Hide Score Mode
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-    // Do not intercept typing inside form inputs or selects
     const tag = document.activeElement ? document.activeElement.tagName : '';
-    if (tag === 'INPUT' || tag === 'TEXTAREA') {
-      if (e.key === 'Escape' && !courseModal.hidden) {
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      if (e.key === 'Escape') {
         e.preventDefault();
+        closeSetupModal();
         closeCourseModal();
+        closeResetModal();
       }
       return;
     }
 
-    // Handle open modals with Escape
-    if (!confirmModal.hidden || !scorecardModal.hidden || !courseModal.hidden) {
+    if (
+      !confirmModal.hidden ||
+      !scorecardModal.hidden ||
+      !courseModal.hidden ||
+      !setupModal.hidden
+    ) {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeResetModal();
         closeScorecardModal();
         closeCourseModal();
+        closeSetupModal();
       }
       return;
     }
@@ -1006,6 +1417,9 @@
     } else if (e.key === 's' || e.key === 'S') {
       e.preventDefault();
       openScorecardModal();
+    } else if (e.key === 'h' || e.key === 'H') {
+      e.preventDefault();
+      toggleHideScoreMode();
     } else if (e.key === 'Escape' && !holeJumpDrawer.hidden) {
       e.preventDefault();
       toggleQuickJumpDrawer(false);
@@ -1013,7 +1427,7 @@
   });
 
   // ==========================================================================
-  // 10. Offline Service Worker Registration & Boot
+  // 12. Offline Service Worker Registration & Boot
   // ==========================================================================
 
   if ('serviceWorker' in navigator) {
@@ -1026,11 +1440,7 @@
 
   if (IS_DEV) {
     document.title = '[DEV] ' + document.title;
-    const topLabelEl = document.querySelector('.top-label');
-    if (topLabelEl) {
-      topLabelEl.textContent = 'ROUND SCORE • DEV PREVIEW';
-      topLabelEl.style.color = '#f59e0b';
-    }
+    topScoreLabel.style.color = '#f59e0b';
   }
 
   render();
